@@ -1,0 +1,38 @@
+.codeTerminal {
+    margin-top: 40px;
+    margin-left: 5%;
+    margin-right: 25%;
+    overflow: hidden; 
+  }
+
+  .codeBanner {
+    background-color: #2E2E2E; /* Darker green for the banner */
+    color: white;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .codeBody {
+    background-color: #0C0C0C;
+  }
+
+  .codeLine {
+    display: flex;
+    align-items: center;
+  }
+  
+  .codePrefix {
+    margin-right: 10px; /* Space between > and the input */
+    margin-left: 10px;
+    color: white; /* Color of the > symbol */
+    user-select: none; /* Makes it non-selectable */
+  }
+  
+  .codeInput {
+    border: none;
+  }
+  
+  /* Optionally add a global style to remove outline on focus for inputs */
+  *:focus {
+    outline: none;
+  }

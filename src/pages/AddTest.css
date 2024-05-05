@@ -1,0 +1,55 @@
+body, html {
+    margin: 0;
+    padding: 0;
+}
+  
+  .App {
+    text-align: center;
+  }
+  
+  .AddTestFields {
+    padding-top: 50px;
+    margin-left: 5%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* This will add space between your form controls */
+    width: 300px;
+  }
+  
+  .greyInputBox {
+    background-color: #D9D9D9; /* Gray background */
+    border: 1px solid black; /* Sharp border */
+    border-radius: 0; /* No rounded corners */
+    font-family: 'Cascadia Code';
+  }
+
+  .grayInput input,
+  .grayInput textarea {
+    font-family: 'Cascadia Code'; /* Ensure input uses same font */
+  }
+
+  .grayInput .MuiInputBase-input::placeholder {
+    color: #666; /* Placeholder color */
+  }
+    .actionButtons {
+    margin-top: 50px;
+    margin-left: 5%; /* 5% margin from the left */
+    display: flex; /* Aligns children inline */
+    gap: 30px; /* 20px gap between each button */
+  }
+  
+  .footer {
+    background-color: #333;
+    color: white;
+    padding: 10px 0;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+  
+  .footer a {
+    color: #9ccef8; /* Light blue link color */
+    text-decoration: none;
+    margin: 10px;
+  }
+  

@@ -1,3 +1,11 @@
+
+* {
+  margin: 0;
+  padding: 0;
+  /* Set JetBrains Mono as the default font for all text */
+  font-family: 'Cascadia Code';
+}
+
 .App {
   text-align: center;
 }

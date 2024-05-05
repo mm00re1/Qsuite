@@ -1,0 +1,52 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #3E0A66;
+    color: white;
+    padding: 10px 20px;
+  }
+  
+  .header-section {
+    flex: 1; /* Assign equal weight to all sections */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .header-section:first-child {
+    justify-content: flex-start;
+  }
+  
+  .header-section:last-child {
+    justify-content: flex-end;
+  }
+
+.header-title {
+  flex-direction: column; /* If you want to stack other items in the center section */
+}
+
+/* Now you can adjust the font size and weight of the title as needed */
+.header-title > div {
+  font-size: 20px; /* Example size */
+}
+  
+  .backButton {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+  }
+  
+  .userProfile {
+    cursor: pointer;
+  }
+  
+  .userIcon {
+    /* Use your previously defined styles or adjust as needed */
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border-radius: 50%;
+  }
