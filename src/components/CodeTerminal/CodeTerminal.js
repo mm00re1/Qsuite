@@ -55,14 +55,12 @@ const CodeTerminal = ({ lines, onLinesChange }) => {
     }
   };
 
-  /*const handleChange = (event, index) => {
-    const newLines = [...lines];
-    newLines[index] = event.target.value;
-    setLines(newLines);
+  const handleChange = (event, index) => {
     if (activeIndex !== index) {
       setActiveIndex(index); // Update active index on type
     }
-  };*/
+    onLinesChange(lines.map((content, i) => i === index ? event.target.value : content))
+  };
 
   return (
     <Paper elevation={24} className="codeTerminal" style={{ borderRadius: '6px' }}>
@@ -76,7 +74,7 @@ const CodeTerminal = ({ lines, onLinesChange }) => {
                     fullWidth
                     multiline
                     value={line}
-                    onChange={(event) => onLinesChange(lines.map((content, i) => i === index ? event.target.value : content))}
+                    onChange={(event) => handleChange(event, index)}
                     //onKeyPress={(event) => handleEnterPress(event, index)}
                     onKeyDown={(event) => handleKeyDown(event, index)}
                     inputRef={(el) => inputRefs.current[index] = el} // Assign ref

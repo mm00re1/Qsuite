@@ -51,16 +51,16 @@ const AddTest = () => {
         console.log("Executing code:", lines); // keep lines seperate and join in the backend before being dispatched to kdb for execution, this way we can store it as multi line in the sql db
     
         // Example POST request using fetch
-        /*fetch('http://your-backend-endpoint/execute', {
+        fetch('http://127.0.0.1:5000/executeQcode/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ code: codeToExecute })
+          body: JSON.stringify({ code: lines })
         })
         .then(response => response.json())
         .then(data => console.log(data))
-        .catch(error => console.error('Error:', error));*/
+        .catch(error => console.error('Error:', error));
     };
     
     const addTest = () => {
