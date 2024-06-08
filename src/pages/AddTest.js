@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header/Header.js'
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import { useNavigate } from 'react-router-dom';
 import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
 import CustomButton from '../components/CustomButton/CustomButton.js';
 import './AddTest.css'
@@ -26,39 +27,40 @@ const Footer = () => (
 );
 
 // App Component
-const AddTest = () => {
+const AddTestPage = () => {
     const [name, setName] = React.useState('');
-    const [project, setProject] = useState('');
-    const [machine, setMachine] = useState('');
-    const [port, setPort] = React.useState('');
+    const [group, setGroup] = useState('');
     const [lines, setLines] = useState(['']); // Start with one empty line
     const [message, setMessage] = useState('');
     const [response, setResponse] = useState("");
     const [showResponse, setShowResponse] = useState(false);
     const [testStatus, setTestStatus] = useState(null);
-
-    const projectOptions = ["options", "equities", "+"];
+    const [testGroups, setTestGroups] = useState([]);
     const machineOptions = ["kdb-dev-01", "kdb-dev-02", "+"];
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        fetch('http://127.0.0.1:5000/test_groups/')
+            .then(response => response.json())
+            .then(data => {
+                setTestGroups(data);
+            })
+            .catch(error => console.error('Error fetching test groups:', error));
+    }, []);
+
+    const goToHomePage = () => {
+        navigate('/');
+    }
 
     const nameChange = (event) => {
         setName(event.target.value);
     };
 
-    const projectChange = (event) => {
-        setProject(event.target.value);
-    };
-    
-    const machineChange = (event) => {
-        setMachine(event.target.value);
-    };
-
-    const portChange = (event) => {
-        setPort(event.target.value);
+    const groupChange = (event) => {
+        setGroup(event.target.value);
     };
 
     const executeCode = () => {
-        console.log("Executing code");
-        console.log(lines);
         fetch('http://127.0.0.1:5000/executeQcode/', {
             method: 'POST',
             headers: {
@@ -68,7 +70,6 @@ const AddTest = () => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data);
             setTestStatus(data.success);
             setMessage(data.message); // Update the message state
             setResponse(data.data); // Update the data state
@@ -84,12 +85,54 @@ const AddTest = () => {
     };
     
     const addTest = () => {
-        console.log("Adding Test"); // For debugging
-    }
+        setShowResponse(false)
+        // Check if any of the fields are empty
+        if (!name || !group) {
+            setTestStatus(false);
+            if (!name) setMessage('Name is required.');
+            else if (!group) setMessage('Group is required.');
+            return;
+        }
+        
+        // Find the group object by name
+        const selectedGroup = testGroups.find(testGroup => testGroup.name === group);
+
+        // If group not found, show an error
+        if (!selectedGroup) {
+            setTestStatus(false);
+            setMessage('Selected group not found.');
+            return;
+        }
+
+        const testData = {
+            group_id: selectedGroup.id, // Use the ID instead of the name
+            test_name: name,
+            test_code: lines.join(''), // Combine the lines into a single string
+            expected_output: true // Adjust based on your requirements
+        };
+        
+        fetch('http://127.0.0.1:5000/add_test_case/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(testData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            setTestStatus(true);
+            setMessage(data.message);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            setTestStatus(false);
+            setMessage('Failed to add test case.');
+        });
+    };
 
     return (
         <>
-            <Header title={"All Test Runs"}/>
+            <Header title={"All Test Runs"} onClick={goToHomePage}/>
             <div className="AddTestFields">
                 <TextField
                     label="Name"
@@ -113,11 +156,11 @@ const AddTest = () => {
                       }}
                 />
                 <FormControl variant="filled">
-                <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Project </InputLabel>
+                <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Test Group </InputLabel>
                     <Select
-                    value={project}
-                    label="Project"
-                    onChange={projectChange}
+                    value={group}
+                    label="Group"
+                    onChange={groupChange}
                     style={{
                         backgroundColor: 'white',
                         borderRadius: 0,
@@ -133,71 +176,17 @@ const AddTest = () => {
                         }
                       }}
                     >
-                        {projectOptions.map((option, index) => (
-                            <MenuItem
-                                key={index}
-                                value={option}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center'}}
-                            >
-                                {option}
-                            </MenuItem>
-                        ))}
+                    {testGroups.map((option, index) => (
+                        <MenuItem
+                            key={index}
+                            value={option.name} // Use option.name for the value
+                            style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center'}}
+                        >
+                            {option.name}
+                        </MenuItem>
+                    ))}
                     </Select>
                 </FormControl>
-
-                <FormControl variant="filled">
-                <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Machine </InputLabel>
-                    <Select
-                    value={machine}
-                    label="Machine"
-                    onChange={machineChange}
-                    style={{
-                        backgroundColor: 'white',
-                        borderRadius: 0,
-                        fontFamily: 'Cascadia Code',
-                        boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                        minWidth: '250px'
-                    }}
-                    MenuProps={{
-                        PaperProps: {
-                          style: {
-                            backgroundColor: 'white', // Dropdown box color
-                          }
-                        }
-                      }}
-                    >
-                        {machineOptions.map((option, index) => (
-                            <MenuItem
-                                key={index}
-                                value={option}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center'}}
-                            >
-                                {option}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                <TextField
-                    label="Port"
-                    variant="filled"
-                    value={port}
-                    onChange={portChange}
-                    style={{
-                        boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                        minWidth: '250px'
-                    }}
-                    InputLabelProps={{
-                        style: {
-                          fontFamily: 'Cascadia Code', // Set the font family of the label text
-                        }
-                      }}
-                    InputProps={{
-                        style: {
-                          backgroundColor: 'white',
-                          fontFamily: 'Cascadia Code',
-                        }
-                      }}
-                />
             </div>
             <CodeTerminal lines={lines} onLinesChange={setLines} />
             {testStatus !== null && (
@@ -254,4 +243,4 @@ const AddTest = () => {
     )
 };
 
-export default AddTest;
+export default AddTestPage;
