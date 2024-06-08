@@ -13,21 +13,6 @@ const CodeTerminal = ({ lines, onLinesChange }) => {
     }
   }, [activeIndex, lines]);
 
-  /*const handleEnterPress = (event, index) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const newLines = [...lines];
-      // Append a semicolon if the line is not empty and does not already end with one
-      if (newLines[index].trim() !== '' && !newLines[index].trim().endsWith(';')) {
-        newLines[index] += ';';
-      }
-      // Insert a new empty line right after the current line
-      newLines.splice(index + 1, 0, '');
-      onLinesChange(newLines);
-      setActiveIndex(index + 1); // Move cursor to the newly added line
-    }
-  };*/
-
   const handleKeyDown = (event, index) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -79,6 +64,7 @@ const CodeTerminal = ({ lines, onLinesChange }) => {
                     onKeyDown={(event) => handleKeyDown(event, index)}
                     inputRef={(el) => inputRefs.current[index] = el} // Assign ref
                     style={{ color: 'white', fontFamily: "Cascadia Code" }}
+                    spellCheck={false}
                 />
             </div>
         ))}

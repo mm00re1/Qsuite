@@ -1,8 +1,15 @@
+.homepage-container {
+    background-color: #3E0A66;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cascadia Code', monospace;
+    height: 100vh; /* Ensure it covers the full viewport height */
+}
+
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #3E0A66;
     color: white;
     padding: 10px 20px;
   }
@@ -23,28 +30,20 @@
   }
 
 .header-title {
+  flex-direction: column; /* If you want to stack other items in the center section */
   justify-content: center; /* Center the title section */
-  flex-direction: row; /* Ensure the title and logo are in a row */
 }
 
 /* Now you can adjust the font size and weight of the title as needed */
 .header-title > div {
   font-size: 20px; /* Example size */
 }
-  
-.title-logo-container {
-  display: flex;
-  align-items: center;
-}
 
-  .backButton {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 20px;
+.title-logo-container {
+    display: flex;
+    align-items: center;
   }
-  
+
   .userProfile {
     cursor: pointer;
   }
@@ -56,3 +55,18 @@
     background-color: white;
     border-radius: 50%;
   }
+
+  .projectSelector {
+    padding-top: 70px;
+    margin-left: 5%;
+    display: flex;
+    padding-bottom: 20px;
+  }
+  
+  .homeButtons {
+    margin-left: 0%;
+    margin-top: 40px;
+    display: flex; /* Aligns children inline */
+    justify-content: center; /* Centers the items horizontally */
+    gap: 50px; /* 20px gap between each button */
+}

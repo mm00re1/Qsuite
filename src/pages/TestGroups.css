@@ -1,0 +1,67 @@
+body, html {
+    margin: 0;
+    padding: 0;
+}
+  
+  .App {
+    text-align: center;
+  }
+  
+  .dateSelector {
+    padding-top: 170px;
+    margin-left: 5%;
+    display: flex;
+    padding-bottom: 20px;
+  }
+  
+  .tableContainer {
+    margin-left: 5%;
+    margin-right: 30%;
+  }
+
+.createGroup {
+    margin-top: 50px;
+    margin-bottom: 50px;
+    margin-left: 5%; /* 5% margin from the left */
+    display: flex; /* Aligns children inline */
+    gap: 30px; /* 20px gap between each button */
+  }
+
+  .inputs-container {
+    margin-left: 5%;
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin-top: 20px;
+    gap: 15px; /* Ensures a gap between grey-container and close-button */
+    margin-bottom: 100px;
+}
+
+.grey-container {
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    padding-left: 15px;
+    border-radius: 0;
+    gap: 20px; /* Ensures a 20px gap between input fields */
+}
+
+.button-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 5px 10px 5px 5px;
+}
+
+.button-stack > button {
+    margin: 2px 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
