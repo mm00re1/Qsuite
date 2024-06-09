@@ -2,6 +2,8 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, ThemeProvider, createTheme, IconButton } from '@mui/material';
 import { Link } from 'react-router-dom';
 import EditIcon from '../../assets/edit_icon.svg'; // Import your SVG file
+import GreenTick from '../../assets/green_tick.svg'; // Import your SVG file
+import RedX from '../../assets/red_x.svg'; // Import your SVG file
 
 const tableTheme = createTheme({
     components: {
@@ -10,31 +12,40 @@ const tableTheme = createTheme({
                 root: {
                     boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.3)',
                     borderRadius: 0,
+                    backgroundColor: '#f0f0f0'
                 }
             }
         }
     }
 });
 
-const DynamicTable = ({ columns, data, showCircleButton, onEditButtonClick, currentDate  }) => {
+const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, currentDate }) => {
+
     const handleEditButtonClick = (row) => {
         if (onEditButtonClick) {
-            console.log(row);
             onEditButtonClick(row);
         }
     };
+
+    const roundValue = (val) => {
+        if (typeof val === "number") {
+            return val.toLocaleString()
+        } else {
+            return val
+        }
+    }
     
     return (
         <ThemeProvider theme={tableTheme}>
             <div style={{ display: 'flex', position: 'relative', width: '100%' }}>
                 {/* Main Table */}
-                <TableContainer component={Paper} style={{ color: "white", flexGrow: 1 }}>
+                <TableContainer component={Paper} style={{ color: "white", flexGrow: 1, maxHeight: '500px' }}>
                     <Table>
                         <TableHead>
                             <TableRow>
-                                {columns.map((column) => (
-                                    <TableCell key={column.field} style={{ fontFamily: 'Cascadia Code', fontWeight: 'bold' }}>
-                                        {column.title}
+                                {columnList.map((column) => (
+                                    <TableCell key={column} style={{ fontFamily: 'Cascadia Code', fontWeight: 'bold' }}>
+                                        {column}
                                     </TableCell>
                                 ))}
                                 {showCircleButton && <TableCell style={{ width: '50px' }} />}
@@ -44,17 +55,30 @@ const DynamicTable = ({ columns, data, showCircleButton, onEditButtonClick, curr
                         <TableBody>
                             {data.map((row, rowIndex) => (
                                 <TableRow key={rowIndex}>
-                                    {columns.map((column) => (
-                                        <TableCell key={column.field} style={{ fontFamily: 'Cascadia Code' }}>
-                                            {column.field === 'name' ? (
+                                    {columnList.map((column) => (
+                                        <TableCell key={column} style={{ fontFamily: 'Cascadia Code' }}>
+                                            {column === 'Name' ? (
                                                 <Link
-                                                    to={`/testgroup/${row.name}/${currentDate}`}
+                                                    to={`/testgroup/${row.Name}/${currentDate.replace(/\//g, '-')}`}
                                                     style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }}
                                                 >
-                                                    {row[column.field]}
+                                                    {row[column]}
                                                 </Link>
+                                            ) : column === 'Test Name' ? (
+                                                <Link
+                                                    to={`/test/${row['test_case_id']}`}
+                                                    style={{
+                                                        color: row["Status"] === true ? '#60E42D' : '#FF1818',
+                                                        textDecoration: 'underline',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >
+                                                    {row[column]}
+                                                </Link>
+                                            ) : column === 'Status' ? (
+                                                <img src={row["Status"] === true ? GreenTick : RedX } alt="edit icon" style={{ width: '10%', height: '10%' }} />
                                             ) : (
-                                                row[column.field]
+                                                roundValue(row[column])
                                             )}
                                         </TableCell>
                                     ))}
