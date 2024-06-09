@@ -5,12 +5,13 @@ import HomePage from './pages/HomePage.js'
 import TestGroupDetail from './pages/TestGroupDetail.js'; // Import the new component
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import 'dayjs/locale/en-gb';
 
 import './App.css';
 
 function App() {
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={'en-gb'}>
       <Router>
         <Routes>
           <Route path="/"  element={<HomePage/>} />

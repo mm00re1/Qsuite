@@ -5,17 +5,8 @@ import CustomButton from '../components/CustomButton/CustomButton.js';
 import DynamicTable from '../components/DynamicTable/DynamicTable.js';
 import GroupForm from '../components/GroupForm/GroupForm.js';
 import { DatePicker } from '@mui/x-date-pickers';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import './TestGroups.css'
-
-const sampleColumns = [
-    { field: 'name', title: 'Name' },
-    { field: 'server', title: 'Machine' },
-    { field: 'port', title: 'Port' },
-    { field: 'schedule', title: 'Scheduled' },
-    { field: 'passed', title: 'Passed' },
-    { field: 'failed', title: 'Failed' }
-];
 
 // App Component
 const TestGroups = () => {
@@ -33,8 +24,9 @@ const TestGroups = () => {
     });
     const [startDate, setStartDate] = useState(null);
     const [latestDate, setLatestDate] = useState(null);
-    const [missingDates, setMissingDates] = useState([]);
+    const [missingDates, setMissingDates] = useState(new Set());
     const [tableData, setTableData] = useState([]);
+    const [columnList, setColumnList] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -44,7 +36,8 @@ const TestGroups = () => {
                 setStartDate(dayjs(data.start_date));
                 console.log('start date: ', data.start_date);
                 setLatestDate(dayjs(data.latest_date));
-                setMissingDates(data.missing_dates.map(date => dayjs(date)));
+                const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
+                setMissingDates(missingDatesSet);
                 if (!date && data.latest_date) {
                     setDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
                 }
@@ -64,8 +57,9 @@ const TestGroups = () => {
             const formattedDate = selectedDate.replace(/\//g, '-');
             fetch(`http://127.0.0.1:5000/get_test_result_summary/?date=${formattedDate}`)
                 .then(response => response.json())
-                .then(groups => {
-                    setTableData(groups);
+                .then(data => {
+                    setTableData(data.groups_data);
+                    setColumnList(data.columnList); // New state to store column list
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
@@ -142,8 +136,11 @@ const TestGroups = () => {
         setEditGroup(true);
         setFormData(row);
     };
-    //minDate=
-    //maxDate=
+
+    const isMissing = (date: Dayjs) => {
+        return missingDates.has(dayjs(date).format('YYYY-MM-DD'));
+    };
+    
     return (
         <>
             <Header title={"Home Page"} onClick={goToHomePage} />
@@ -151,12 +148,15 @@ const TestGroups = () => {
                 <DatePicker
                     value={dayjs(dt, 'DD/MM/YYYY')}
                     onChange={onDateChange}
+                    minDate={startDate}
+                    shouldDisableDate={isMissing}
+                    maxDate={latestDate}
                 />
             </div>
             <div className="tableContainer">
                 <DynamicTable
-                    columns={sampleColumns}
                     data={tableData}
+                    columnList={columnList}
                     showCircleButton={true}
                     onEditButtonClick={handleEditButtonClick}
                     currentDate={dt}
