@@ -66,9 +66,9 @@ const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, c
                                                 </Link>
                                             ) : column === 'Test Name' ? (
                                                 <Link
-                                                    to={`/test/${row['test_case_id']}`}
+                                                    to={`/testdetail/${row['test_case_id']}/${currentDate.replace(/\//g, '-')}`}
                                                     style={{
-                                                        color: row["Status"] === true ? '#60E42D' : '#FF1818',
+                                                        color: row["Status"] === true ? '#60E42D' : row["Status"] === false ? '#FF1818' : 'black',
                                                         textDecoration: 'underline',
                                                         fontWeight: 'bold'
                                                     }}

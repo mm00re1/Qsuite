@@ -12,6 +12,7 @@ import DynamicTable from '../components/DynamicTable/DynamicTable.js';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
+import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
 import './TestGroupDetail.css';
 
 const TestGroupDetail = () => {
@@ -28,7 +29,7 @@ const TestGroupDetail = () => {
     const [columnList, setColumnList] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
-
+    const [all_tests, setAll_tests] = useState(false);
     const greyColor = '#f0f0f0';
     const sortOptions = ["Failed", "Passed", "Time Taken"];
 
@@ -58,25 +59,27 @@ const TestGroupDetail = () => {
 
     useEffect(() => {
         if (dt) {
-            fetchTestRunResults(dt, selectedName, sortOption, currentPage);
+            fetchTestRunResults(dt, selectedName, sortOption, currentPage, false);
         }
     }, [testGroups]);
 
-    const fetchTestRunResults = (selectedDate, groupName, sortStyle, pageNumber = 1) => {
-        //console.log("selectedDate: ", selectedDate);
-        //console.log("groupName: ", groupName);
-        //console.log("pageNumber: ", pageNumber);
+    const fetchTestRunResults = (selectedDate, groupName, sortStyle, pageNumber = 1, all_test_view) => {
+        const group = testGroups.find(group => group.name === groupName);
+        const group_id = group ? group.id : null;
+        let fetchUrl;
 
-        if (selectedDate) {
+        if (all_test_view) {
+            fetchUrl = `http://127.0.0.1:5000/get_tests_by_group/?group_id=${group_id}&page_number=${pageNumber}`
+        } else if (selectedDate) {
             // Adjust the date format before sending it to the API
             const formattedDate = selectedDate.replace(/\//g, '-');
-            //console.log("testGroups: ", testGroups);
-            const group = testGroups.find(group => group.name === groupName);
-            const group_id = group ? group.id : null;
-            fetch(`http://127.0.0.1:5000/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`)
+            fetchUrl = `http://127.0.0.1:5000/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`;
+        }
+        if (all_test_view || selectedDate) {
+            fetch(fetchUrl)
                 .then(response => response.json())
                 .then(data => {
-                    setTableData(data.test_run_data);
+                    setTableData(data.test_data);
                     setColumnList(data.columnList);
                     setTotalPages(data.total_pages);
                     setCurrentPage(data.current_page);
@@ -93,13 +96,13 @@ const TestGroupDetail = () => {
         setSelectedName(event.target.value);
         setSortOption('');
         setCurrentPage(1);
-        fetchTestRunResults(dt, event.target.value, '', currentPage);
+        fetchTestRunResults(dt, event.target.value, '', currentPage, all_tests);
     };
 
     const onSortChange = (event) => {
         setSortOption(event.target.value);
         setCurrentPage(1);
-        fetchTestRunResults(dt, selectedName, event.target.value, 1);
+        fetchTestRunResults(dt, selectedName, event.target.value, 1, all_tests);
     };
 
     const onDateChange = (newDate) => {
@@ -107,7 +110,7 @@ const TestGroupDetail = () => {
         setDt(formattedDate);
         setSortOption('');
         setCurrentPage(1);
-        fetchTestRunResults(formattedDate, selectedName, '', 1);
+        fetchTestRunResults(formattedDate, selectedName, '', 1, all_tests);
 
     };
 
@@ -118,21 +121,36 @@ const TestGroupDetail = () => {
     const handlePrevPage = () => {
         if (currentPage > 1) {
             setCurrentPage(currentPage - 1);
-            fetchTestRunResults(dt, selectedName, sortOption, currentPage - 1);
+            fetchTestRunResults(dt, selectedName, sortOption, currentPage - 1, all_tests);
         }
     };
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
-            fetchTestRunResults(dt, selectedName, sortOption, currentPage + 1);
+            fetchTestRunResults(dt, selectedName, sortOption, currentPage + 1, all_tests);
 
         }
+    };
+
+    const handleSwitchClick = (button) => {
+        setSortOption('');
+        setCurrentPage(1);
+        let all_test_view = button === "right" ? true : false;
+        setAll_tests(all_test_view)
+        fetchTestRunResults(dt, selectedName, '', 1, all_test_view);
     };
 
     return (
         <>
             <Header title={"All Test Groups"} onClick={goToGroupsPage} />
+            <div className="switchButton">
+                <CustomSwitchButton
+                    leftMessage={"Test Results"}
+                    rightMessage={"All Tests"}
+                    onClick={handleSwitchClick}
+                />
+            </div>
             <div className="groupAndDate">
                 <FormControl variant="filled">
                     <InputLabel style={{ fontFamily: 'Cascadia Code' }}>Group</InputLabel>
@@ -166,45 +184,49 @@ const TestGroupDetail = () => {
                         ))}
                     </Select>
                 </FormControl>
-                <FormControl variant="filled">
-                    <InputLabel style={{ fontFamily: 'Cascadia Code' }}>Sort By</InputLabel>
-                    <Select
-                        value={sortOption}
-                        label="Sort By"
-                        onChange={onSortChange}
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: 0,
-                            fontFamily: 'Cascadia Code',
-                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                            minWidth: '250px'
-                        }}
-                        MenuProps={{
-                            PaperProps: {
-                                style: {
-                                    backgroundColor: 'white', // Dropdown box color
+                {!all_tests && (
+                <>
+                    <FormControl variant="filled">
+                        <InputLabel style={{ fontFamily: 'Cascadia Code' }}>Sort By</InputLabel>
+                        <Select
+                            value={sortOption}
+                            label="Sort By"
+                            onChange={onSortChange}
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: 0,
+                                fontFamily: 'Cascadia Code',
+                                boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                                minWidth: '250px'
+                            }}
+                            MenuProps={{
+                                PaperProps: {
+                                    style: {
+                                        backgroundColor: 'white', // Dropdown box color
+                                    }
                                 }
-                            }
-                        }}
-                    >
-                        {sortOptions.map((option, index) => (
-                            <MenuItem
-                                key={index}
-                                value={option}
-                                style={{ fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center' }}
-                            >
-                                {option}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                <DatePicker
-                    value={dayjs(dt, 'DD/MM/YYYY')}
-                    onChange={onDateChange}
-                    minDate={startDate}
-                    maxDate={latestDate}
-                    shouldDisableDate={isMissing}
-                />
+                            }}
+                        >
+                            {sortOptions.map((option, index) => (
+                                <MenuItem
+                                    key={index}
+                                    value={option}
+                                    style={{ fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center' }}
+                                >
+                                    {option}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <DatePicker
+                        value={dayjs(dt, 'DD/MM/YYYY')}
+                        onChange={onDateChange}
+                        minDate={startDate}
+                        maxDate={latestDate}
+                        shouldDisableDate={isMissing}
+                    />
+                </>
+                )}
             </div>
             <div className="tableContainer">
                 <DynamicTable

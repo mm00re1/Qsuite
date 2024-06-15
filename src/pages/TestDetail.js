@@ -1,36 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Header from '../components/Header/Header.js';
+import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
+import CustomButton from '../components/CustomButton/CustomButton.js';
+import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
+import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
+import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import './AddTest.css'
 import Autocomplete from '@mui/material/Autocomplete';
 import debounce from 'lodash.debounce';
 import CircularProgress from '@mui/material/CircularProgress';
-import Header from '../components/Header/Header.js'
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import { useNavigate } from 'react-router-dom';
-import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
-import CustomButton from '../components/CustomButton/CustomButton.js';
-import './AddTest.css'
-import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
-import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
 
-  const ActionButtons = ({ onExecute, onAddTest }) => (
+const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
       <CustomButton onClick={onExecute}>Execute</CustomButton>
-      <CustomButton onClick={onAddTest}>Save Test</CustomButton>
+      <CustomButton onClick={onAddTest}>Edit Test</CustomButton>
     </div>
   );
 
-// Footer Component
-const Footer = () => (
-  <footer className="footer">
-    <a href="#">Test Creation Tutorial</a>
-  </footer>
-);
-
-// App Component
-const AddTestPage = () => {
+  const TestDetail = () => {
+    const { testId, date } = useParams();
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
     const [lines, setLines] = useState(['']); // Start with one empty line
@@ -38,24 +32,29 @@ const AddTestPage = () => {
     const [response, setResponse] = useState("");
     const [showResponse, setShowResponse] = useState(false);
     const [testStatus, setTestStatus] = useState(null);
+    const [testData, setTestData] = useState({});
     const [testGroups, setTestGroups] = useState([]);
     const [testNames, setTestNames] = useState([]);
     const [testInputValue, setTestInputValue] = useState('');
     const [loading, setLoading] = useState(false);
     const [linkedTests, setLinkedTests] = useState([]);
     const navigate = useNavigate();
-
+    
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/test_groups/')
-            .then(response => response.json())
-            .then(data => {
-                setTestGroups(data);
-            })
-            .catch(error => console.error('Error fetching test groups:', error));
+        if (date && testId) {
+            // Adjust the date format before sending it to the API
+            const formattedDate = date.replace(/\//g, '-');
+            fetch(`http://127.0.0.1:5000/get_test_info/?date=${formattedDate}&test_id=${testId}`)
+                .then(response => response.json())
+                .then(data => {
+                    setTestData(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+            }
     }, []);
 
-    const goToHomePage = () => {
-        navigate('/');
+    const goToGroupDetailPage = () => {
+        navigate(`/testgroup/${"Trayport"}/${date.replace(/\//g, '-')}`);  // ***********  fix later
     }
 
     const nameChange = (event) => {
@@ -90,7 +89,7 @@ const AddTestPage = () => {
         });
     };
     
-    const addTest = () => {
+    const editTest = () => {
         setShowResponse(false)
         // Check if any of the fields are empty
         if (!name || !group) {
@@ -161,7 +160,7 @@ const AddTestPage = () => {
 
     return (
         <>
-            <Header title={"All Test Runs"} onClick={goToHomePage}/>
+            <Header title={"All Test Runs"} onClick={goToGroupDetailPage}/>
             <div className="AddTestFields">
                 <div className="name-input-container">
                     <TextField
@@ -309,9 +308,10 @@ const AddTestPage = () => {
                     {JSON.stringify(response, null, 2)}
                 </div>
             )}
-            <ActionButtons onExecute={executeCode} onAddTest={addTest}/>
+            <ActionButtons onExecute={executeCode} onAddTest={editTest}/>
         </>
     )
 };
 
-export default AddTestPage;
+
+export default TestDetail;
