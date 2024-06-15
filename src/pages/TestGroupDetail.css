@@ -1,6 +1,13 @@
+.switchButton {
+  padding-top: 130px;
+  margin-left: 5%;
+  display: flex;
+  padding-bottom: 20px;
+  gap: 15px;
+}
 
 .groupAndDate {
-    padding-top: 170px;
+    padding-top: 30px;
     margin-left: 5%;
     display: flex;
     padding-bottom: 20px;
