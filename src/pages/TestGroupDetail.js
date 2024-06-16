@@ -12,11 +12,14 @@ import DynamicTable from '../components/DynamicTable/DynamicTable.js';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
+import { PieChart } from '@mui/x-charts/PieChart';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
+import { useTestNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import './TestGroupDetail.css';
 
 const TestGroupDetail = () => {
     const { name, date } = useParams();
+    const { testHistory, deleteTestHistory } = useTestNavigation();
     const navigate = useNavigate();
     const [selectedName, setSelectedName] = useState(name || '');
     const [sortOption, setSortOption] = useState('');
@@ -30,8 +33,14 @@ const TestGroupDetail = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
     const [all_tests, setAll_tests] = useState(false);
+    const [totalPassed, setTotalPassed] = useState(0);
+    const [totalFailed, setTotalFailed] = useState(0);
     const greyColor = '#f0f0f0';
     const sortOptions = ["Failed", "Passed", "Time Taken"];
+
+    useEffect(() => {
+        deleteTestHistory()
+    }, []);
 
     useEffect(() => {
         fetch('http://127.0.0.1:5000/test_groups/')
@@ -83,6 +92,8 @@ const TestGroupDetail = () => {
                     setColumnList(data.columnList);
                     setTotalPages(data.total_pages);
                     setCurrentPage(data.current_page);
+                    setTotalPassed(data.total_passed);
+                    setTotalFailed(data.total_failed);
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
@@ -141,6 +152,10 @@ const TestGroupDetail = () => {
         fetchTestRunResults(dt, selectedName, '', 1, all_test_view);
     };
 
+    const handleTestNameClick = (test_case_id, date) => {
+        navigate(`/testdetail/${test_case_id}/${date}`);
+    };
+
     return (
         <>
             <Header title={"All Test Groups"} onClick={goToGroupsPage} />
@@ -149,6 +164,25 @@ const TestGroupDetail = () => {
                     leftMessage={"Test Results"}
                     rightMessage={"All Tests"}
                     onClick={handleSwitchClick}
+                />
+            </div>
+            <div className="pie-chart">
+                <PieChart
+                    colors={['#60F82A', '#F11414']}
+                    series={[
+                        {
+                        data: [
+                            { id: 0, value: totalPassed, label: 'Passed' },
+                            { id: 1, value: totalFailed, label: 'Failed' },
+                        ],
+                        innerRadius: 55,
+                        outerRadius: 75,
+                        paddingAngle: 2,
+                        },
+                    ]}
+                    width={300}
+                    height={200}
+                    slotProps={{ legend: { hidden: true } }}
                 />
             </div>
             <div className="groupAndDate">
@@ -234,6 +268,7 @@ const TestGroupDetail = () => {
                     data={tableData}
                     showCircleButton={false}
                     currentDate={dt}
+                    onTestNameClick={handleTestNameClick}
                 />
             </div>
             <div className="paginationControls">

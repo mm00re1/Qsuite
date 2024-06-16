@@ -6,7 +6,6 @@ import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
 import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import './AddTest.css'
 import Autocomplete from '@mui/material/Autocomplete';
 import debounce from 'lodash.debounce';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -16,6 +15,12 @@ import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import SingleTestHistoryChart from '../components/SingleTestHistoryChart/SingleTestHistoryChart.js';
+import DynamicTable from '../components/DynamicTable/DynamicTable.js';
+import BackButton from '../components/BackButton/BackButton.js';
+import { useTestNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
+import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
+import './AddTest.css'
+
 
 const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
@@ -26,6 +31,8 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
   const TestDetail = () => {
     const { testId, date } = useParams();
+    const { testHistory, addTestToHistory, removeLastTestFromHistory } = useTestNavigation();
+
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
     const [lines, setLines] = useState(['']); // Start with one empty line
@@ -39,20 +46,22 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [testInputValue, setTestInputValue] = useState('');
     const [loading, setLoading] = useState(false);
     const [linkedTests, setLinkedTests] = useState([]);
+    const [columnList, setColumnList] = useState([]);
+    const [tableData, setTableData] = useState([]);
+    const [showingStatusHistory, setShowingStatusHistory] = useState(true);
     const navigate = useNavigate();
     
-    useEffect(() => {
+    const fetchTestGroups = () => {
         fetch('http://127.0.0.1:5000/test_groups/')
             .then(response => response.json())
             .then(data => {
                 setTestGroups(data);
             })
             .catch(error => console.error('Error fetching test groups:', error));
-    }, []);
+    };
 
-    useEffect(() => {
+    const fetchTestData = (date, testId) => {
         if (date && testId) {
-            // Adjust the date format before sending it to the API
             const formattedDate = date.replace(/\//g, '-');
             fetch(`http://127.0.0.1:5000/get_test_info/?date=${formattedDate}&test_id=${testId}`)
                 .then(response => response.json())
@@ -62,10 +71,35 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     setName(data.test_name);
                     setLinkedTests(data.dependent_tests);
                     setLines(data.test_code.split('\n\n'));
+                    setColumnList(data.dependent_tests_columns);
+                    setTableData(data.dependent_tests);
                 })
                 .catch(error => console.error('Error fetching data:', error));
-            }
-    }, []);
+        }
+    };
+
+    const addTestToContext = (testId) => {
+        addTestToHistory(testId);
+    };
+    
+    useEffect(() => {
+        fetchTestGroups();
+        addTestToHistory(testId);
+        fetchTestData(date, testId);
+    }, [testId, date]);
+
+    const handleTestNameClick = (test_case_id, dt) => {
+        addTestToHistory(testId);
+        navigate(`/testdetail/${test_case_id}/${dt}`);
+
+    };
+
+    const goToPrevTestPage = () => {
+        removeLastTestFromHistory();
+        if (testHistory.length > 1) {
+            navigate(`/testdetail/${testHistory[testHistory.length - 2]}/${date.replace(/\//g, '-')}`);
+        }
+    };
 
     const goToGroupDetailPage = () => {
         navigate(`/testgroup/${"Trayport"}/${date.replace(/\//g, '-')}`);  // ***********  fix later
@@ -73,6 +107,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
     const nameChange = (event) => {
         setName(event.target.value);
+        console.log(testHistory);
     };
 
     const groupChange = (event) => {
@@ -172,9 +207,18 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
         setLinkedTests(newValues);
     };
 
+    const handleSwitchClick = () => {
+        setShowingStatusHistory(!showingStatusHistory);
+    };
+
     return (
         <>
             <Header title={"All Test Runs"} onClick={goToGroupDetailPage}/>
+            {(testHistory.length > 1) && (
+                <div className="prev-test">
+                <BackButton title={"Previous Test"} onClick={goToPrevTestPage} textColor={'#3E0A66'} fontSize={'16px'} />
+              </div>
+            )}
             <div className="AddTestFields">
                 <div className="name-input-container">
                     <TextField
@@ -235,7 +279,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     multiple
                     id="test-search-dropdown"
                     options={testNames}
-                    getOptionLabel={(option) => option.test_name}
+                    getOptionLabel={(option) => option["Test Name"]}
                     value={linkedTests}
                     onChange={handleLinkedTestChange}
                     inputValue={testInputValue}
@@ -272,10 +316,30 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     )}
                 />
             </div>
+            <div className="switchButton-TestDetail">
+                <CustomSwitchButton
+                    leftMessage={"Status"}
+                    rightMessage={"Time Taken"}
+                    onClick={handleSwitchClick}
+                />
+            </div>
             <SingleTestHistoryChart
                 x_values={testData.last_30_days_dates}
-                y_values={testData.last_30_days_statuses}
+                y_values={showingStatusHistory ? testData.last_30_days_statuses: testData.last_30_days_timeTaken}
+                statusHistory={showingStatusHistory}
             />
+            {!(tableData.length === 0) && (
+                <div className="tableContainer">
+                    <DynamicTable
+                        columnList={columnList}
+                        data={tableData}
+                        showCircleButton={false}
+                        currentDate={date}
+                        onTestNameClick={handleTestNameClick}
+                    />
+                </div>
+            )}
+            <div style={{marginBottom: '100px'}} />
             <CodeTerminal lines={lines} onLinesChange={setLines} />
             {testStatus !== null && (
                 <div

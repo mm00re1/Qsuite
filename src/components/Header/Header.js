@@ -7,7 +7,7 @@ import { ReactComponent as QsuiteLogo } from '../../assets/qsuite_logo.svg';
 const Header = ({ title, onClick }) => (
     <header className="header">
       <div className="header-section">
-        <BackButton title={title} onClick={onClick} />
+        <BackButton title={title} onClick={onClick} textColor={'white'} fontSize={'20px'} />
       </div>
       <div className="header-section header-title">
         <div className="title-logo-container">

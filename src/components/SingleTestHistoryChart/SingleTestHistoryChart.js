@@ -1,12 +1,12 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
 
-const SingleTestHistoryChart = ({ x_values, y_values }) => {
+const SingleTestHistoryChart = ({ x_values, y_values, statusHistory }) => {
     // Ensure y_values is defined and is an array
     const isValidArray = Array.isArray(y_values) && y_values.length > 0;
 
     let color;
-    if (isValidArray) {
+    if (statusHistory && isValidArray) {
         if (y_values.every(value => value === 1)) {
             color = '#00FF00'; // Green
         } else if (y_values.every(value => value === 0)) {
@@ -15,7 +15,7 @@ const SingleTestHistoryChart = ({ x_values, y_values }) => {
             color = '#28C7FA'; // Blue
         }
     } else {
-        color = '#28C7FA'; // Default to blue if y_values is invalid
+        color = '#28C7FA'; // Default to blue if y_values is invalid or statusHistory is false
     }
 
     const chartData = {
@@ -68,7 +68,7 @@ const SingleTestHistoryChart = ({ x_values, y_values }) => {
             tooltip: {
                 y: {
                     formatter: function (value) {
-                        return value === 1 ? 'True' : 'False'; // Custom tooltip values
+                        return statusHistory ? (value === 1 ? 'True' : 'False') : value.toLocaleString(); // Conditional tooltip formatting
                     }
                 }
             }

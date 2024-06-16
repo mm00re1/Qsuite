@@ -30,6 +30,7 @@ body, html {
     margin-left: 5%; /* 5% margin from the left */
     display: flex; /* Aligns children inline */
     gap: 30px; /* 20px gap between each button */
+    margin-bottom: 60px;
   }
   
   .footer {
@@ -46,4 +47,19 @@ body, html {
     text-decoration: none;
     margin: 10px;
   }
+
+  .tableContainer {
+    margin-left: 5%;
+    margin-right: 30%;
+    max-width: 800px;
+    margin-top: 30px;
+  }
   
+  .prev-test {
+    margin-top: 10px;
+    margin-left: 20px;
+  }
+
+  .switchButton-TestDetail {
+    margin-left: 5%;
+  }

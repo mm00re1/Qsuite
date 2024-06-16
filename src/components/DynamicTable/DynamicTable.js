@@ -19,11 +19,17 @@ const tableTheme = createTheme({
     }
 });
 
-const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, currentDate }) => {
+const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, onTestNameClick, currentDate }) => {
 
     const handleEditButtonClick = (row) => {
         if (onEditButtonClick) {
             onEditButtonClick(row);
+        }
+    };
+
+    const handleTestNameClick = (test_case_id, date) => {
+        if (onTestNameClick) {
+            onTestNameClick(test_case_id, date);
         }
     };
 
@@ -65,18 +71,23 @@ const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, c
                                                     {row[column]}
                                                 </Link>
                                             ) : column === 'Test Name' ? (
-                                                <Link
-                                                    to={`/testdetail/${row['test_case_id']}/${currentDate.replace(/\//g, '-')}`}
+                                                <span
+                                                    onClick={() => handleTestNameClick(row['test_case_id'], currentDate.replace(/\//g, '-'))}
                                                     style={{
+                                                        cursor: 'pointer',
                                                         color: row["Status"] === true ? '#60E42D' : row["Status"] === false ? '#FF1818' : 'black',
                                                         textDecoration: 'underline',
                                                         fontWeight: 'bold'
                                                     }}
                                                 >
                                                     {row[column]}
-                                                </Link>
+                                                </span>
                                             ) : column === 'Status' ? (
-                                                <img src={row["Status"] === true ? GreenTick : RedX } alt="edit icon" style={{ width: '10%', height: '10%' }} />
+                                                row["Status"] === true ? (
+                                                    <img src={GreenTick} alt="green tick" style={{ width: '10%', height: '10%' }} />
+                                                ) : row["Status"] === false ? (
+                                                    <img src={RedX} alt="red x" style={{ width: '10%', height: '10%' }} />
+                                                ) : null
                                             ) : (
                                                 roundValue(row[column])
                                             )}

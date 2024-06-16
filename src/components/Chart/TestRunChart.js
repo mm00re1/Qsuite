@@ -67,15 +67,15 @@ const TestRunChart = ({ testResults }) => {
     };
 
     return (
-        <div style={{ marginLeft: '5%', width: '400px' }}>
+        <>
             <Chart
                 options={chartData.options}
                 series={chartData.series}
                 type="line"
                 height={400}
-                width={800}
+                width={750}
             />
-        </div>
+        </>
     );
 };
 
