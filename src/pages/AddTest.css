@@ -12,13 +12,17 @@ body, html {
     margin-left: 5%;
     display: flex;
     gap: 20px; /* This will add space between your form controls */
-    padding-bottom: 80px;
+    padding-bottom: 40px;
   }
   
   .autocomplete-container {
     width: 250px;
     max-height: 57px; /* Adjust as needed */
     overflow-y: auto;
+}
+
+.name-input-container {
+  max-height: 57px; /* Adjust as needed */
 }
 
   .actionButtons {

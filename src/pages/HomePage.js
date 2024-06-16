@@ -36,6 +36,15 @@ const HomePage = () => {
             .catch(error => console.error('Error fetching test groups:', error));
     }, []);
 
+    useEffect(() => {
+        fetch('http://127.0.0.1:5000/get_test_results_30_days/')
+            .then(response => response.json())
+            .then(data => {
+                setTestResults(data);
+            })
+            .catch(error => console.error('Error fetching test results:', error));
+    }, []);
+
     const onGroupChange = (event) => {
         const selectedGroupName = event.target.value;
         setTestGroup(selectedGroupName);

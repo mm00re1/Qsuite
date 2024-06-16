@@ -113,8 +113,9 @@ const AddTestPage = () => {
         const testData = {
             group_id: selectedGroup.id, // Use the ID instead of the name
             test_name: name,
-            test_code: lines.join(''), // Combine the lines into a single string
-            expected_output: true // Adjust based on your requirements
+            test_code: lines.join('\n\n'), // Combine the lines into a single string
+            expected_output: true, // Adjust based on your requirements
+            dependencies: Object.values(linkedTests).map(test => test.id)
         };
         
         fetch('http://127.0.0.1:5000/add_test_case/', {
