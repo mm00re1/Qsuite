@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import UserProfile from '../components/UserProfile/UserProfile.js';
 import CustomButton from '../components/CustomButton/CustomButton.js';
 import TestRunChart from '../components/Chart/TestRunChart';
+import { PieChart } from '@mui/x-charts/PieChart';
 import './HomePage.css';
 import { ReactComponent as QsuiteLogo } from '../assets/qsuite_logo.svg';
 
@@ -118,7 +119,41 @@ const HomePage = () => {
                     </Select>
                 </FormControl>
             </div>
-            <TestRunChart testResults={testResults} />
+            <div style={{ display: 'flex', width: '100%' }}>
+                <div
+                    style={{
+                        width: '50%',
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        marginLeft: '5%' // Adjust this value if necessary to fit your design
+                    }}>
+                    <TestRunChart testResults={testResults} />
+                </div>
+                <div
+                    style={{
+                        width: '50%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                    }}>
+                    <PieChart
+                        colors={['#60F82A', '#F11414']}
+                        series={[
+                            {
+                            data: [
+                                { id: 0, value: 20, label: 'Passed' },
+                                { id: 1, value: 2, label: 'Failed' },
+                            ],
+                            innerRadius: 120,
+                            outerRadius: 150,
+                            paddingAngle: 4,
+                            },
+                        ]}
+                        width={400}
+                        height={350}
+                        slotProps={{ legend: { hidden: true } }}
+                    />
+                </div>
+            </div>
             <ActionButtons onViewGroups={viewGroups} onCreateTest={createTest}/>
         </div>
   )

@@ -37,14 +37,6 @@
   align-items: center;
 }
 
-  .backButton {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 20px;
-  }
-  
   .userProfile {
     cursor: pointer;
   }
