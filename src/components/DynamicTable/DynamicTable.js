@@ -12,7 +12,7 @@ const tableTheme = createTheme({
                 root: {
                     boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.3)',
                     borderRadius: 0,
-                    backgroundColor: '#f0f0f0'
+                    backgroundColor: 'white' //'#f0f0f0'
                 }
             }
         }

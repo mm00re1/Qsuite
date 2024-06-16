@@ -15,6 +15,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import SingleTestHistoryChart from '../components/SingleTestHistoryChart/SingleTestHistoryChart.js';
 
 const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
@@ -41,6 +42,15 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const navigate = useNavigate();
     
     useEffect(() => {
+        fetch('http://127.0.0.1:5000/test_groups/')
+            .then(response => response.json())
+            .then(data => {
+                setTestGroups(data);
+            })
+            .catch(error => console.error('Error fetching test groups:', error));
+    }, []);
+
+    useEffect(() => {
         if (date && testId) {
             // Adjust the date format before sending it to the API
             const formattedDate = date.replace(/\//g, '-');
@@ -48,6 +58,10 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 .then(response => response.json())
                 .then(data => {
                     setTestData(data);
+                    setGroup(data.group_name);
+                    setName(data.test_name);
+                    setLinkedTests(data.dependent_tests);
+                    setLines(data.test_code.split('\n\n'));
                 })
                 .catch(error => console.error('Error fetching data:', error));
             }
@@ -258,6 +272,10 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     )}
                 />
             </div>
+            <SingleTestHistoryChart
+                x_values={testData.last_30_days_dates}
+                y_values={testData.last_30_days_statuses}
+            />
             <CodeTerminal lines={lines} onLinesChange={setLines} />
             {testStatus !== null && (
                 <div
