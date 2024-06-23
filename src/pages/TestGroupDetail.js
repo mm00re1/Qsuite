@@ -14,14 +14,13 @@ import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import { PieChart } from '@mui/x-charts/PieChart';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
-import { useTestNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
+import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import './TestGroupDetail.css';
 
 const TestGroupDetail = () => {
-    const { name, date } = useParams();
-    const { testHistory, deleteTestHistory } = useTestNavigation();
+    const { date } = useParams();
+    const { testGroup, setTestGroup, deleteTestHistory } = useNavigation();
     const navigate = useNavigate();
-    const [selectedName, setSelectedName] = useState(name || '');
     const [sortOption, setSortOption] = useState('');
     const [dt, setDt] = useState(date || '');
     const [testGroups, setTestGroups] = useState([]);
@@ -68,7 +67,7 @@ const TestGroupDetail = () => {
 
     useEffect(() => {
         if (dt) {
-            fetchTestRunResults(dt, selectedName, sortOption, currentPage, false);
+            fetchTestRunResults(dt, testGroup, sortOption, currentPage, false);
         }
     }, [testGroups]);
 
@@ -104,7 +103,7 @@ const TestGroupDetail = () => {
     }
 
     const onGroupChange = (event) => {
-        setSelectedName(event.target.value);
+        setTestGroup(event.target.value);
         setSortOption('');
         setCurrentPage(1);
         fetchTestRunResults(dt, event.target.value, '', currentPage, all_tests);
@@ -113,7 +112,7 @@ const TestGroupDetail = () => {
     const onSortChange = (event) => {
         setSortOption(event.target.value);
         setCurrentPage(1);
-        fetchTestRunResults(dt, selectedName, event.target.value, 1, all_tests);
+        fetchTestRunResults(dt, testGroup, event.target.value, 1, all_tests);
     };
 
     const onDateChange = (newDate) => {
@@ -121,7 +120,7 @@ const TestGroupDetail = () => {
         setDt(formattedDate);
         setSortOption('');
         setCurrentPage(1);
-        fetchTestRunResults(formattedDate, selectedName, '', 1, all_tests);
+        fetchTestRunResults(formattedDate, testGroup, '', 1, all_tests);
 
     };
 
@@ -132,14 +131,14 @@ const TestGroupDetail = () => {
     const handlePrevPage = () => {
         if (currentPage > 1) {
             setCurrentPage(currentPage - 1);
-            fetchTestRunResults(dt, selectedName, sortOption, currentPage - 1, all_tests);
+            fetchTestRunResults(dt, testGroup, sortOption, currentPage - 1, all_tests);
         }
     };
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
-            fetchTestRunResults(dt, selectedName, sortOption, currentPage + 1, all_tests);
+            fetchTestRunResults(dt, testGroup, sortOption, currentPage + 1, all_tests);
 
         }
     };
@@ -149,7 +148,7 @@ const TestGroupDetail = () => {
         setCurrentPage(1);
         let all_test_view = button === "right" ? true : false;
         setAll_tests(all_test_view)
-        fetchTestRunResults(dt, selectedName, '', 1, all_test_view);
+        fetchTestRunResults(dt, testGroup, '', 1, all_test_view);
     };
 
     const handleTestNameClick = (test_case_id, date) => {
@@ -175,9 +174,8 @@ const TestGroupDetail = () => {
                             { id: 0, value: totalPassed, label: 'Passed' },
                             { id: 1, value: totalFailed, label: 'Failed' },
                         ],
-                        innerRadius: 55,
-                        outerRadius: 75,
-                        paddingAngle: 2,
+                        innerRadius: 70,
+                        outerRadius: 100,
                         },
                     ]}
                     width={300}
@@ -189,7 +187,7 @@ const TestGroupDetail = () => {
                 <FormControl variant="filled">
                     <InputLabel style={{ fontFamily: 'Cascadia Code' }}>Group</InputLabel>
                     <Select
-                        value={selectedName}
+                        value={testGroup}
                         label="Group"
                         onChange={onGroupChange}
                         style={{

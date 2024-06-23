@@ -6,11 +6,13 @@ import DynamicTable from '../components/DynamicTable/DynamicTable.js';
 import GroupForm from '../components/GroupForm/GroupForm.js';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
+import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import './TestGroups.css'
 
 // App Component
 const TestGroups = () => {
     const { date } = useParams();
+    const { setTestGroup } = useNavigation();
     const [dt, setDt] = useState(date || "");
     const [submitMsg, setSubmitMsg] = useState("Add Group");
     const [showInputs, setShowInputs] = useState(false);
@@ -66,9 +68,15 @@ const TestGroups = () => {
     };
 
     const greyColor = '#f0f0f0';
+
     const goToHomePage = () => {
         navigate('/');
     }
+
+    const handleGroupNameClick = (test_group, date) => {
+        setTestGroup(test_group);
+        navigate(`/testgroup/${date}`)
+    };
 
     const onCreateGroup = () => {
         setShowInputs(true);
@@ -160,6 +168,7 @@ const TestGroups = () => {
                     showCircleButton={true}
                     onEditButtonClick={handleEditButtonClick}
                     currentDate={dt}
+                    onGroupNameClick={handleGroupNameClick}
                 />
             </div>
             <div className="createGroup">
