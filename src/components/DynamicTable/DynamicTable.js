@@ -55,9 +55,9 @@ const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, o
         columnList.forEach(column => {
             const maxWidths = data.map(row => {
                 const cellValue = row[column] ? row[column].toLocaleString() : '';
-                return cellValue.length * 11 + 20; // Adjust the multiplier as needed
+                return cellValue.length * 9 + 10; // Adjust the multiplier as needed
             });
-            widths[column] = Math.max(...maxWidths, column.length * 11 + 20);
+            widths[column] = Math.max(...maxWidths, column.length * 9 + 10);
         });
         return widths;
     }, [data, columnList]);
@@ -72,7 +72,7 @@ const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, o
             <div style={{ display: 'flex', position: 'relative', width: '100%' }}>
                 {/* Main Table */}
                 <div style={{ maxWidth: `${totalWidth}px`, margin: '0', paddingRight: '16px' }}>
-                <TableContainer component={Paper} style={{ color: "white", flexGrow: 1, maxHeight: '500px' }}>
+                <TableContainer component={Paper} style={{ color: "white", flexGrow: 1, maxHeight: '500px', minWidth: '250px' }}>
                     <Table>
                         <TableHead>
                             <TableRow>

@@ -36,7 +36,6 @@ const TestGroups = () => {
             .then(response => response.json())
             .then(data => {
                 setStartDate(dayjs(data.start_date));
-                console.log('start date: ', data.start_date);
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
                 setMissingDates(missingDatesSet);
@@ -84,10 +83,10 @@ const TestGroups = () => {
         setSubmitMsg("Add Group")
         setFormData({
             id: '',
-            name: '',
-            machine: '',
-            port: '',
-            schedule: ''
+            Name: '',
+            Machine: '',
+            Port: '',
+            Scheduled: ''
         });
     };
     
@@ -122,10 +121,10 @@ const TestGroups = () => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                name: formData.name,
-                server: formData.machine,
-                port: formData.port,
-                schedule: formData.schedule
+                name: formData.Name,
+                server: formData.Machine,
+                port: formData.Port,
+                schedule: formData.Scheduled
             }),
         })
         .then(response => response.json())
@@ -176,10 +175,10 @@ const TestGroups = () => {
             </div>
             {(showInputs || editGroup) && (
                 <GroupForm
-                    name={formData.name}
-                    machine={formData.machine}
-                    port={formData.port}
-                    schedule={formData.schedule}
+                    name={formData.Name}
+                    machine={formData.Machine}
+                    port={formData.Port}
+                    schedule={formData.Scheduled}
                     onChange={handleInputChange}
                     onClose={handleCloseClick}
                     onTestConnect={handleTestConnect}

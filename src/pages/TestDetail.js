@@ -23,7 +23,7 @@ import './AddTest.css'
 const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
       <CustomButton onClick={onExecute}>Execute</CustomButton>
-      <CustomButton onClick={onAddTest}>Edit Test</CustomButton>
+      <CustomButton onClick={onAddTest}>Push Changes</CustomButton>
     </div>
   );
 
@@ -152,20 +152,21 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             return;
         }
 
-        const testData = {
+        const editedTestData = {
             group_id: selectedGroup.id, // Use the ID instead of the name
             test_name: name,
+            id: testData.id,
             test_code: lines.join('\n\n'), // Combine the lines into a single string
             expected_output: true, // Adjust based on your requirements
             dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
-        fetch('http://127.0.0.1:5000/add_test_case/', {
-            method: 'POST',
+        fetch('http://127.0.0.1:5000/edit_test_case/', {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(testData)
+            body: JSON.stringify(editedTestData)
         })
         .then(response => response.json())
         .then(data => {
@@ -291,6 +292,31 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 </div>
             )}
             <div style={{marginBottom: '100px'}} />
+            {(!(testData.pass_status !== null ? testData.pass_status : true)) && (
+                <div
+                    style={{
+                        display: 'inline-flex',    // Changed to flex to enable flexbox properties
+                        alignItems: 'center', 
+                        padding: '10px 50px 10px 10px',
+                        backgroundColor: '#0C0C0C',
+                        color: '#FF4242',
+                        borderRadius: '6px',
+                        font: 'Cascadia Code',
+                        marginLeft: '5%',
+                        marginTop: '40px',
+                        marginBottom: '20px',
+                        fontSize: '17px',
+                        boxShadow: '0px 24px 36px rgba(0, 0, 0, 0.2)',
+                        }}
+                >
+                    {(
+                        <>
+                        <RedCircle style={{ width: '33px', height: '33px' }} />
+                        <span style={{ marginLeft: '10px' }}>{"[Previous Error] "} {testData.error_message}</span>
+                        </>
+                    )}
+                </div>
+            )}
             <CodeTerminal lines={lines} onLinesChange={setLines} />
             {testStatus !== null && (
                 <div

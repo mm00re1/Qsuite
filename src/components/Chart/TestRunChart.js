@@ -25,6 +25,7 @@ const TestRunChart = ({ testResults }) => {
                 categories: categories,
                 labels: {
                     style: {
+                        colors: 'white',
                         fontSize: '12px'
                     }
                 }
@@ -34,16 +35,16 @@ const TestRunChart = ({ testResults }) => {
                 title: {
                     text: 'Number of Tests',
                     style: {
+                        color: 'white',
                         fontSize: '16px',
                         fontWeight: 'normal',
                         fontFamily: 'Cascadia Code',
-                        color: '#3E0A66'
                     }
                 },
                 labels: {
                     style: {
                         fontSize: '12px',
-                        color: '#3E0A66'
+                        colors: 'white',
                     }
                 }
             },

@@ -72,7 +72,7 @@ const HomePage = () => {
     }
 
     return (
-        <>
+        <div className="homepage-container">
             <header className="header">
                 <div className="header-section"></div>
                 <div className="header-section header-title">
@@ -87,22 +87,24 @@ const HomePage = () => {
             </header>
             <div className="projectSelector">
                 <FormControl variant="filled">
-                <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Test Group </InputLabel>
+                <InputLabel style={{ fontFamily: 'Cascadia Code', color: 'white' }}> Test Group </InputLabel>
                     <Select
                     value={testGroup}
                     label="testGroup"
                     onChange={onGroupChange}
                     style={{
-                        backgroundColor: 'white',
                         borderRadius: 0,
                         fontFamily: 'Cascadia Code',
                         boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.2)',
                         minWidth: '250px',
+                        color: 'white',
+                        backgroundColor: '#280543',
                     }}
                     MenuProps={{
                         PaperProps: {
                           style: {
-                            backgroundColor: 'white', // Dropdown box color
+                            backgroundColor: '#280543', // Dropdown box color
+                            color: 'white',
                           }
                         }
                       }}
@@ -136,26 +138,11 @@ const HomePage = () => {
                         display: 'flex',
                         justifyContent: 'center',
                     }}>
-                    <PieChart
-                        colors={['#60F82A', '#F11414']}
-                        series={[
-                            {
-                            data: [
-                                { id: 0, value: 20, label: 'Passed' },
-                                { id: 1, value: 2, label: 'Failed' },
-                            ],
-                            innerRadius: 120,
-                            outerRadius: 150,
-                            },
-                        ]}
-                        width={400}
-                        height={350}
-                        slotProps={{ legend: { hidden: true } }}
-                    />
+
                 </div>
             </div>
             <ActionButtons onViewGroups={viewGroups} onCreateTest={createTest}/>
-        </>
+        </div>
   )
 }
 
