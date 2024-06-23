@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header/Header.js';
 import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
 import CustomButton from '../components/CustomButton/CustomButton.js';
@@ -6,9 +6,6 @@ import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
 import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import Autocomplete from '@mui/material/Autocomplete';
-import debounce from 'lodash.debounce';
-import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
@@ -17,8 +14,9 @@ import InputLabel from '@mui/material/InputLabel';
 import SingleTestHistoryChart from '../components/SingleTestHistoryChart/SingleTestHistoryChart.js';
 import DynamicTable from '../components/DynamicTable/DynamicTable.js';
 import BackButton from '../components/BackButton/BackButton.js';
-import { useTestNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
+import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
+import MultiDropdown from '../components/MultiDropdown/MultiDropdown.js';
 import './AddTest.css'
 
 
@@ -31,7 +29,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
   const TestDetail = () => {
     const { testId, date } = useParams();
-    const { testHistory, addTestToHistory, removeLastTestFromHistory } = useTestNavigation();
+    const { testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
 
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
@@ -42,9 +40,6 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [testStatus, setTestStatus] = useState(null);
     const [testData, setTestData] = useState({});
     const [testGroups, setTestGroups] = useState([]);
-    const [testNames, setTestNames] = useState([]);
-    const [testInputValue, setTestInputValue] = useState('');
-    const [loading, setLoading] = useState(false);
     const [linkedTests, setLinkedTests] = useState([]);
     const [columnList, setColumnList] = useState([]);
     const [tableData, setTableData] = useState([]);
@@ -102,12 +97,11 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     };
 
     const goToGroupDetailPage = () => {
-        navigate(`/testgroup/${"Trayport"}/${date.replace(/\//g, '-')}`);  // ***********  fix later
+        navigate(`/testgroup/${date.replace(/\//g, '-')}`);
     }
 
     const nameChange = (event) => {
         setName(event.target.value);
-        console.log(testHistory);
     };
 
     const groupChange = (event) => {
@@ -161,8 +155,9 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
         const testData = {
             group_id: selectedGroup.id, // Use the ID instead of the name
             test_name: name,
-            test_code: lines.join(''), // Combine the lines into a single string
-            expected_output: true // Adjust based on your requirements
+            test_code: lines.join('\n\n'), // Combine the lines into a single string
+            expected_output: true, // Adjust based on your requirements
+            dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
         fetch('http://127.0.0.1:5000/add_test_case/', {
@@ -184,27 +179,18 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
         });
     };
 
-    const fetchTestOptions = async (inputValue) => {
-        setLoading(true);
-        const response = await fetch(`http://127.0.0.1:5000/search_tests?query=${inputValue}&limit=10`);
-        const data = await response.json();
-        setTestNames(data.map(test => ({ id: test.id, test_name: test.test_name })));
-        setLoading(false);
-    };
-
-    const debouncedFetchOptions = useCallback(debounce(fetchTestOptions, 300), []);
-
-    const handleTestInputChange = (event, newTestInputValue) => {
-        setTestInputValue(newTestInputValue);
-        if (newTestInputValue.length > 0) {
-            debouncedFetchOptions(newTestInputValue);
-        } else {
-            setTestNames([]);
+    const handleLinkedTestChange = (event, newValue) => {
+        // Avoid adding duplicates
+        if (!linkedTests.some(test => test.test_case_id === newValue.test_case_id)) {
+            const updatedLinkedTests = [...linkedTests, newValue];
+            setLinkedTests(updatedLinkedTests);
         }
     };
 
-    const handleLinkedTestChange = (event, newValues) => {
-        setLinkedTests(newValues);
+    const removeLinkedTest = (testToDelete) => {
+        const updatedTests = linkedTests.filter(test => test.test_case_id !== testToDelete.test_case_id);
+        console.log(updatedTests);
+        setLinkedTests(updatedTests);
     };
 
     const handleSwitchClick = () => {
@@ -275,45 +261,10 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     ))}
                     </Select>
                 </FormControl>
-                <Autocomplete
-                    multiple
-                    id="test-search-dropdown"
-                    options={testNames}
-                    getOptionLabel={(option) => option["Test Name"]}
-                    value={linkedTests}
-                    onChange={handleLinkedTestChange}
-                    inputValue={testInputValue}
-                    onInputChange={handleTestInputChange}
-                    loading={loading}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Add a Linked Test..."
-                            variant="filled"
-                            style={{
-                                boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                                width: '250px'
-                            }}
-                            InputLabelProps={{
-                                style: {
-                                    fontFamily: 'Cascadia Code', // Set the font family of the label text
-                                }
-                            }}
-                            InputProps={{
-                                ...params.InputProps,
-                                style: {
-                                    backgroundColor: 'white',
-                                    fontFamily: 'Cascadia Code',
-                                },
-                                endAdornment: (
-                                    <>
-                                        {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                        {params.InputProps.endAdornment}
-                                    </>
-                                ),
-                            }}
-                        />
-                    )}
+                <MultiDropdown
+                    linkedTests={linkedTests}
+                    handleLinkedTestChange={handleLinkedTestChange}
+                    removeLinkedTest={removeLinkedTest}
                 />
             </div>
             <div className="switchButton-TestDetail">

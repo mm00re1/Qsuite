@@ -7,24 +7,24 @@ import TestDetail from './pages/TestDetail.js'; // Import the new component
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import 'dayjs/locale/en-gb';
-import { TestNavigationProvider } from './TestNavigationContext'; // Adjust the path as necessary
+import { NavigationProvider } from './TestNavigationContext'; // Adjust the path as necessary
 
 import './App.css';
 
 function App() {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={'en-gb'}>
-      <TestNavigationProvider>
+      <NavigationProvider>
         <Router>
           <Routes>
             <Route path="/"  element={<HomePage/>} />
             <Route path="/testgroups" element={<TestGroups/>} />
             <Route path="/addtest" element={<AddTestPage/>} />
-            <Route path="/testgroup/:name/:date" element={<TestGroupDetail />} />
+            <Route path="/testgroup/:date" element={<TestGroupDetail />} />
             <Route path="/testdetail/:testId/:date" element={<TestDetail />} />
           </Routes>
         </Router>
-        </TestNavigationProvider>
+        </NavigationProvider>
     </LocalizationProvider>
   );
 }

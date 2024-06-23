@@ -70,8 +70,9 @@ const HomePage = () => {
     const createTest = () => {
         navigate('/addtest');
     }
+
     return (
-        <div className="homepage-container">
+        <>
             <header className="header">
                 <div className="header-section"></div>
                 <div className="header-section header-title">
@@ -86,23 +87,22 @@ const HomePage = () => {
             </header>
             <div className="projectSelector">
                 <FormControl variant="filled">
-                <InputLabel style={{ fontFamily: 'Cascadia Code', color: 'white' }}> Test Group </InputLabel>
+                <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Test Group </InputLabel>
                     <Select
                     value={testGroup}
                     label="testGroup"
                     onChange={onGroupChange}
                     style={{
+                        backgroundColor: 'white',
                         borderRadius: 0,
                         fontFamily: 'Cascadia Code',
                         boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.2)',
                         minWidth: '250px',
-                        color: 'white',
                     }}
                     MenuProps={{
                         PaperProps: {
                           style: {
-                            backgroundColor: '#3E0A66', // Dropdown box color
-                            color: 'white',
+                            backgroundColor: 'white', // Dropdown box color
                           }
                         }
                       }}
@@ -123,15 +123,16 @@ const HomePage = () => {
                 <div
                     style={{
                         width: '50%',
+                        minWidth: '700px',
                         display: 'flex',
                         justifyContent: 'flex-start',
-                        marginLeft: '5%' // Adjust this value if necessary to fit your design
                     }}>
                     <TestRunChart testResults={testResults} />
                 </div>
                 <div
                     style={{
                         width: '50%',
+                        minWidth: '700px',
                         display: 'flex',
                         justifyContent: 'center',
                     }}>
@@ -145,7 +146,6 @@ const HomePage = () => {
                             ],
                             innerRadius: 120,
                             outerRadius: 150,
-                            paddingAngle: 4,
                             },
                         ]}
                         width={400}
@@ -155,7 +155,7 @@ const HomePage = () => {
                 </div>
             </div>
             <ActionButtons onViewGroups={viewGroups} onCreateTest={createTest}/>
-        </div>
+        </>
   )
 }
 

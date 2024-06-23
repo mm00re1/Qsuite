@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext } from 'react';
 
-const TestNavigationContext = createContext();
+const NavigationContext = createContext();
 
-export const TestNavigationProvider = ({ children }) => {
+export const NavigationProvider = ({ children }) => {
     const [testHistory, setTestHistory] = useState([]);
+    const [testGroup, setTestGroup] = useState('');
 
     const addTestToHistory = (testId) => {
         if (testHistory.length === 0) {
@@ -22,10 +23,10 @@ export const TestNavigationProvider = ({ children }) => {
     };
 
     return (
-        <TestNavigationContext.Provider value={{ testHistory, addTestToHistory, removeLastTestFromHistory, deleteTestHistory }}>
+        <NavigationContext.Provider value={{ testGroup, setTestGroup, testHistory, addTestToHistory, removeLastTestFromHistory, deleteTestHistory }}>
             {children}
-        </TestNavigationContext.Provider>
+        </NavigationContext.Provider>
     );
 };
 
-export const useTestNavigation = () => useContext(TestNavigationContext);
+export const useNavigation = () => useContext(NavigationContext);

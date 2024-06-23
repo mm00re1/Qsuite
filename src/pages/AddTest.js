@@ -1,7 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Autocomplete from '@mui/material/Autocomplete';
-import debounce from 'lodash.debounce';
-import CircularProgress from '@mui/material/CircularProgress';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header/Header.js'
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
@@ -14,6 +11,7 @@ import CustomButton from '../components/CustomButton/CustomButton.js';
 import './AddTest.css'
 import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
 import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
+import MultiDropdown from '../components/MultiDropdown/MultiDropdown.js';
 
   const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
@@ -39,9 +37,6 @@ const AddTestPage = () => {
     const [showResponse, setShowResponse] = useState(false);
     const [testStatus, setTestStatus] = useState(null);
     const [testGroups, setTestGroups] = useState([]);
-    const [testNames, setTestNames] = useState([]);
-    const [testInputValue, setTestInputValue] = useState('');
-    const [loading, setLoading] = useState(false);
     const [linkedTests, setLinkedTests] = useState([]);
     const navigate = useNavigate();
 
@@ -115,7 +110,7 @@ const AddTestPage = () => {
             test_name: name,
             test_code: lines.join('\n\n'), // Combine the lines into a single string
             expected_output: true, // Adjust based on your requirements
-            dependencies: Object.values(linkedTests).map(test => test.id)
+            dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
         fetch('http://127.0.0.1:5000/add_test_case/', {
@@ -137,27 +132,17 @@ const AddTestPage = () => {
         });
     };
 
-    const fetchTestOptions = async (inputValue) => {
-        setLoading(true);
-        const response = await fetch(`http://127.0.0.1:5000/search_tests?query=${inputValue}&limit=10`);
-        const data = await response.json();
-        setTestNames(data.map(test => ({ id: test.id, test_name: test.test_name })));
-        setLoading(false);
-    };
-
-    const debouncedFetchOptions = useCallback(debounce(fetchTestOptions, 300), []);
-
-    const handleTestInputChange = (event, newTestInputValue) => {
-        setTestInputValue(newTestInputValue);
-        if (newTestInputValue.length > 0) {
-            debouncedFetchOptions(newTestInputValue);
-        } else {
-            setTestNames([]);
+    const handleLinkedTestChange = (event, newValue) => {
+        // Avoid adding duplicates
+        if (!linkedTests.some(test => test.test_case_id === newValue.test_case_id)) {
+            const updatedLinkedTests = [...linkedTests, newValue];
+            setLinkedTests(updatedLinkedTests);
         }
     };
 
-    const handleLinkedTestChange = (event, newValues) => {
-        setLinkedTests(newValues);
+    const removeLinkedTest = (testToDelete) => {
+        const updatedTests = linkedTests.filter(test => test.test_case_id !== testToDelete.test_case_id);
+        setLinkedTests(updatedTests);
     };
 
     return (
@@ -219,47 +204,13 @@ const AddTestPage = () => {
                     ))}
                     </Select>
                 </FormControl>
-                <Autocomplete
-                    multiple
-                    id="test-search-dropdown"
-                    options={testNames}
-                    getOptionLabel={(option) => option.test_name}
-                    value={linkedTests}
-                    onChange={handleLinkedTestChange}
-                    inputValue={testInputValue}
-                    onInputChange={handleTestInputChange}
-                    loading={loading}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Add a Linked Test..."
-                            variant="filled"
-                            style={{
-                                boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                                width: '250px'
-                            }}
-                            InputLabelProps={{
-                                style: {
-                                    fontFamily: 'Cascadia Code', // Set the font family of the label text
-                                }
-                            }}
-                            InputProps={{
-                                ...params.InputProps,
-                                style: {
-                                    backgroundColor: 'white',
-                                    fontFamily: 'Cascadia Code',
-                                },
-                                endAdornment: (
-                                    <>
-                                        {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                                        {params.InputProps.endAdornment}
-                                    </>
-                                ),
-                            }}
-                        />
-                    )}
+                <MultiDropdown
+                    linkedTests={linkedTests}
+                    handleLinkedTestChange={handleLinkedTestChange}
+                    removeLinkedTest={removeLinkedTest}
                 />
             </div>
+            <div style={{ marginTop: '100px' }}/>
             <CodeTerminal lines={lines} onLinesChange={setLines} />
             {testStatus !== null && (
                 <div

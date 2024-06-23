@@ -20,7 +20,7 @@ const SingleTestHistoryChart = ({ x_values, y_values, statusHistory }) => {
 
     const chartData = {
         series: [{
-            name: 'Passed',
+            name: statusHistory ? 'Passed' : "Time Taken",
             data: y_values
         }],
         options: {
@@ -68,7 +68,7 @@ const SingleTestHistoryChart = ({ x_values, y_values, statusHistory }) => {
             tooltip: {
                 y: {
                     formatter: function (value) {
-                        return statusHistory ? (value === 1 ? 'True' : 'False') : value.toLocaleString(); // Conditional tooltip formatting
+                        return statusHistory ? (value === 1 ? 'True' : 'False') : value.toLocaleString() + " sec"; // Conditional tooltip formatting
                     }
                 }
             }
