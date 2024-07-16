@@ -5,6 +5,8 @@ const NavigationContext = createContext();
 export const NavigationProvider = ({ children }) => {
     const [testHistory, setTestHistory] = useState([]);
     const [testGroup, setTestGroup] = useState('');
+    const [testGroupId, setTestGroupId] = useState(null);
+    const [globalDt, setGlobalDt] = useState('');
 
     const addTestToHistory = (testId) => {
         if (testHistory.length === 0) {
@@ -23,7 +25,7 @@ export const NavigationProvider = ({ children }) => {
     };
 
     return (
-        <NavigationContext.Provider value={{ testGroup, setTestGroup, testHistory, addTestToHistory, removeLastTestFromHistory, deleteTestHistory }}>
+        <NavigationContext.Provider value={{ testGroup, setTestGroup, testGroupId, setTestGroupId, globalDt, setGlobalDt, testHistory, addTestToHistory, removeLastTestFromHistory, deleteTestHistory }}>
             {children}
         </NavigationContext.Provider>
     );

@@ -68,7 +68,7 @@ const CodeTerminal = ({ lines, onLinesChange }) => {
                 />
             </div>
         ))}
-        <div className="codeLine" style={{ height: '30px' }}></div>
+        <div className="codeLine" style={{ height: lines.length == 1 ? '60px' : '30px' }}></div>
       </div>
     </Paper>
   );

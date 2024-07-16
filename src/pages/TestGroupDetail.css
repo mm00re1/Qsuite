@@ -7,7 +7,7 @@
 
 .pie-chart {
   padding-top: 60px;
-  margin-left: 5%;
+  margin-left: 10%;
 }
 
 .groupAndDate {
@@ -20,12 +20,14 @@
 
   .tableContainer {
     margin-left: 5%;
-    margin-right: 30%;
-    max-width: 800px;
   }
 
   .paginationControls {
     margin-left: 5%;
     margin-top: 20px;
     margin-bottom: 100px;
+}
+
+.MuiFormControl-root.MuiTextField-root.css-z3c6am-MuiFormControl-root-MuiTextField-root {
+  width: 210px;
 }

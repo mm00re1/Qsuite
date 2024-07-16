@@ -72,7 +72,7 @@ const HomePage = () => {
     }
 
     return (
-        <>
+        <div className="homepage-container">
             <header className="header">
                 <div className="header-section"></div>
                 <div className="header-section header-title">
@@ -85,44 +85,48 @@ const HomePage = () => {
                 <UserProfile />
                 </div>
             </header>
-            <div className="projectSelector">
-                <FormControl variant="filled">
-                <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Test Group </InputLabel>
-                    <Select
-                    value={testGroup}
-                    label="testGroup"
-                    onChange={onGroupChange}
-                    style={{
-                        backgroundColor: 'white',
-                        borderRadius: 0,
-                        fontFamily: 'Cascadia Code',
-                        boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.2)',
-                        minWidth: '250px',
-                    }}
-                    MenuProps={{
-                        PaperProps: {
-                          style: {
-                            backgroundColor: 'white', // Dropdown box color
-                          }
-                        }
-                      }}
-                    >
-                        {testGroups.map((option, index) => (
-                            <MenuItem
-                                key={index}
-                                value={option}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center'}}
-                            >
-                                {option}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            <div className="white-icon-page">
+                <div className="projectSelector">
+                    <FormControl variant="filled">
+                    <InputLabel style={{ fontFamily: 'Cascadia Code', color: 'white' }}> Test Group </InputLabel>
+                        <Select
+                        value={testGroup}
+                        label="testGroup"
+                        onChange={onGroupChange}
+                        style={{
+                            borderRadius: 0,
+                            fontFamily: 'Cascadia Code',
+                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.2)',
+                            minWidth: '250px',
+                            color: 'white',
+                            backgroundColor: '#280543',
+                        }}
+                        MenuProps={{
+                            PaperProps: {
+                                style: {
+                                backgroundColor: '#280543', // Dropdown box color
+                                color: 'white',
+                                }
+                            }
+                            }}
+                        >
+                            {testGroups.map((option, index) => (
+                                <MenuItem
+                                    key={index}
+                                    value={option}
+                                    style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center'}}
+                                >
+                                    {option}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </div>
             </div>
             <div style={{ display: 'flex', width: '100%' }}>
                 <div
                     style={{
-                        width: '50%',
+                        width: '55%',
                         minWidth: '700px',
                         display: 'flex',
                         justifyContent: 'flex-start',
@@ -131,31 +135,16 @@ const HomePage = () => {
                 </div>
                 <div
                     style={{
-                        width: '50%',
+                        width: '45%',
                         minWidth: '700px',
                         display: 'flex',
                         justifyContent: 'center',
                     }}>
-                    <PieChart
-                        colors={['#60F82A', '#F11414']}
-                        series={[
-                            {
-                            data: [
-                                { id: 0, value: 20, label: 'Passed' },
-                                { id: 1, value: 2, label: 'Failed' },
-                            ],
-                            innerRadius: 120,
-                            outerRadius: 150,
-                            },
-                        ]}
-                        width={400}
-                        height={350}
-                        slotProps={{ legend: { hidden: true } }}
-                    />
+
                 </div>
             </div>
             <ActionButtons onViewGroups={viewGroups} onCreateTest={createTest}/>
-        </>
+        </div>
   )
 }
 

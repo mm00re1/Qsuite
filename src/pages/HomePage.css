@@ -1,9 +1,7 @@
 .homepage-container {
-    background-color: #3E0A66;
-    margin: 0;
-    padding: 0;
+    background-color: #22023A;
     font-family: 'Cascadia Code', monospace;
-    height: 100vh; /* Ensure it covers the full viewport height */
+    min-height: 100vh; /* Ensure it covers the full viewport height */
 }
 
 .header {
@@ -58,15 +56,29 @@
 
   .projectSelector {
     padding-top: 70px;
-    margin-left: 5%;
+    margin-left: 10%;
     display: flex;
     padding-bottom: 20px;
   }
   
   .homeButtons {
     margin-left: 0%;
-    margin-top: 40px;
+    margin-top: 70px;
+    padding-bottom: 110px;
     display: flex; /* Aligns children inline */
     justify-content: center; /* Centers the items horizontally */
     gap: 50px; /* 20px gap between each button */
+}
+
+/*.MuiInputBase-root.MuiOutlinedInput-root.MuiInputBase-colorPrimary.MuiInputBase-formControl.MuiInputBase-adornedEnd.css-o9k5xi-MuiInputBase-root-MuiOutlinedInput-root {
+  color: white; 
+  background-color: #280543;
+}*/
+
+.white-icon-page .MuiSvgIcon-root.MuiSvgIcon-fontSizeMedium.MuiSelect-icon.MuiSelect-iconFilled.MuiSelect-iconOpen.css-bpeome-MuiSvgIcon-root-MuiSelect-icon {
+  color: white;
+}
+
+.white-icon-page .MuiSvgIcon-root.MuiSvgIcon-fontSizeMedium.MuiSelect-icon.MuiSelect-iconFilled.css-hfutr2-MuiSvgIcon-root-MuiSelect-icon {
+  color: white;
 }

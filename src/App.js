@@ -20,7 +20,7 @@ function App() {
             <Route path="/"  element={<HomePage/>} />
             <Route path="/testgroups" element={<TestGroups/>} />
             <Route path="/addtest" element={<AddTestPage/>} />
-            <Route path="/testgroup/:date" element={<TestGroupDetail />} />
+            <Route path="/testgroup" element={<TestGroupDetail />} />
             <Route path="/testdetail/:testId/:date" element={<TestDetail />} />
           </Routes>
         </Router>

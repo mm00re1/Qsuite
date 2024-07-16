@@ -11,15 +11,16 @@ const tableTheme = createTheme({
                 root: {
                     boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.3)',
                     borderRadius: 0,
-                    backgroundColor: 'white' //'#f0f0f0'
+                    backgroundColor: 'white' //'#f0f0f0'   '#280543'
                 }
             }
         }
     }
 });
 
-const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, onTestNameClick, onGroupNameClick, currentDate }) => {
-
+const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButtonClick, onTestNameClick, onGroupNameClick, currentDate }) => {
+    const textColor = 'black';
+    
     const handleEditButtonClick = (row) => {
         if (onEditButtonClick) {
             onEditButtonClick(row);
@@ -55,9 +56,9 @@ const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, o
         columnList.forEach(column => {
             const maxWidths = data.map(row => {
                 const cellValue = row[column] ? row[column].toLocaleString() : '';
-                return cellValue.length * 11 + 20; // Adjust the multiplier as needed
+                return cellValue.length * 10 + 15; // Adjust the multiplier as needed
             });
-            widths[column] = Math.max(...maxWidths, column.length * 11 + 20);
+            widths[column] = Math.max(...maxWidths, column.length * 10 + 15);
         });
         return widths;
     }, [data, columnList]);
@@ -72,12 +73,12 @@ const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, o
             <div style={{ display: 'flex', position: 'relative', width: '100%' }}>
                 {/* Main Table */}
                 <div style={{ maxWidth: `${totalWidth}px`, margin: '0', paddingRight: '16px' }}>
-                <TableContainer component={Paper} style={{ color: "white", flexGrow: 1, maxHeight: '500px' }}>
+                <TableContainer component={Paper} style={{ flexGrow: 1, maxHeight: '500px', minWidth: '250px' }}>
                     <Table>
                         <TableHead>
                             <TableRow>
                                 {columnList.map((column) => (
-                                    <TableCell key={column} style={{ fontFamily: 'Cascadia Code', fontWeight: 'bold', minWidth: columnWidths[column] }}>
+                                    <TableCell key={column} style={{ color: textColor, fontFamily: 'Cascadia Code', fontWeight: 'bold', minWidth: columnWidths[column] }}>
                                         {column}
                                     </TableCell>
                                 ))}
@@ -89,7 +90,7 @@ const DynamicTable = ({ data, columnList, showCircleButton, onEditButtonClick, o
                             {data.map((row, rowIndex) => (
                                 <TableRow key={rowIndex}>
                                     {columnList.map((column) => (
-                                        <TableCell key={column} style={{ fontFamily: 'Cascadia Code', minWidth: columnWidths[column] }}>
+                                        <TableCell key={column} style={{ color: textColor, fontFamily: 'Cascadia Code', minWidth: columnWidths[column] }}>
                                             {column === 'Name' ? (
                                                 <span
                                                     onClick={() => handleGroupNameClick(row.Name, currentDate.replace(/\//g, '-'))}

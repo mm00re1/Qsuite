@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header/Header.js'
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import CustomButton from '../components/CustomButton/CustomButton.js';
 import DynamicTable from '../components/DynamicTable/DynamicTable.js';
 import GroupForm from '../components/GroupForm/GroupForm.js';
@@ -11,9 +11,8 @@ import './TestGroups.css'
 
 // App Component
 const TestGroups = () => {
-    const { date } = useParams();
-    const { setTestGroup } = useNavigation();
-    const [dt, setDt] = useState(date || "");
+    const groupFormRef = useRef(null);
+    const { setTestGroup, setTestGroupId, globalDt, setGlobalDt } = useNavigation();
     const [submitMsg, setSubmitMsg] = useState("Add Group");
     const [showInputs, setShowInputs] = useState(false);
     const [editGroup, setEditGroup] = useState(false);
@@ -36,23 +35,28 @@ const TestGroups = () => {
             .then(response => response.json())
             .then(data => {
                 setStartDate(dayjs(data.start_date));
-                console.log('start date: ', data.start_date);
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
                 setMissingDates(missingDatesSet);
-                if (!date && data.latest_date) {
-                    setDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
+                if (!globalDt && data.latest_date) {
+                    setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
                 }
             })
             .catch(error => console.error('Error fetching dates:', error));
-    }, [date]);
+    }, [globalDt]);
 
     useEffect(() => {
-        if (dt) {
-            fetchGroupDetailsAndResults(dt);
+        if (globalDt) {
+            fetchGroupDetailsAndResults(globalDt);
         }
-    }, [dt]);
+    }, [globalDt]);
 
+    useEffect(() => {
+        if (showInputs || editGroup) {
+            groupFormRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [showInputs, editGroup]);
+    
     const fetchGroupDetailsAndResults = (selectedDate) => {
         if (selectedDate) {
             // Adjust the date format before sending it to the API
@@ -75,7 +79,10 @@ const TestGroups = () => {
 
     const handleGroupNameClick = (test_group, date) => {
         setTestGroup(test_group);
-        navigate(`/testgroup/${date}`)
+        const group = tableData.find(group => group.Name === test_group);
+        const group_id = group ? group.id : null;
+        setTestGroupId(group_id);
+        navigate(`/testgroup`)
     };
 
     const onCreateGroup = () => {
@@ -84,10 +91,10 @@ const TestGroups = () => {
         setSubmitMsg("Add Group")
         setFormData({
             id: '',
-            name: '',
-            machine: '',
-            port: '',
-            schedule: ''
+            Name: '',
+            Machine: '',
+            Port: '',
+            Scheduled: ''
         });
     };
     
@@ -98,7 +105,7 @@ const TestGroups = () => {
 
     const onDateChange = (newDate) => {
         const formattedDate = newDate ? newDate.format('DD/MM/YYYY') : '';
-        setDt(formattedDate);
+        setGlobalDt(formattedDate);
         fetchGroupDetailsAndResults(formattedDate);
     };
 
@@ -122,15 +129,15 @@ const TestGroups = () => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                name: formData.name,
-                server: formData.machine,
-                port: formData.port,
-                schedule: formData.schedule
+                name: formData.Name,
+                server: formData.Machine,
+                port: formData.Port,
+                schedule: formData.Scheduled
             }),
         })
         .then(response => response.json())
         .then(data => {
-            fetchGroupDetailsAndResults(dt);
+            fetchGroupDetailsAndResults(globalDt);
             handleCloseClick();
         })
         .catch(error => {
@@ -154,20 +161,20 @@ const TestGroups = () => {
             <Header title={"Home Page"} onClick={goToHomePage} />
             <div className="dateSelector">
                 <DatePicker
-                    value={dayjs(dt, 'DD/MM/YYYY')}
+                    value={dayjs(globalDt, 'DD/MM/YYYY')}
                     onChange={onDateChange}
                     minDate={startDate}
                     shouldDisableDate={isMissing}
                     maxDate={latestDate}
                 />
             </div>
-            <div className="tableContainer">
+            <div className="tableContainerGroups">
                 <DynamicTable
                     data={tableData}
                     columnList={columnList}
                     showCircleButton={true}
                     onEditButtonClick={handleEditButtonClick}
-                    currentDate={dt}
+                    currentDate={globalDt}
                     onGroupNameClick={handleGroupNameClick}
                 />
             </div>
@@ -175,17 +182,19 @@ const TestGroups = () => {
                 <CustomButton onClick={onCreateGroup}>Create Group</CustomButton>
             </div>
             {(showInputs || editGroup) && (
-                <GroupForm
-                    name={formData.name}
-                    machine={formData.machine}
-                    port={formData.port}
-                    schedule={formData.schedule}
-                    onChange={handleInputChange}
-                    onClose={handleCloseClick}
-                    onTestConnect={handleTestConnect}
-                    onSubmit={handleFormSubmit}
-                    finalButtonMsg={submitMsg}
-                />
+                <div ref={groupFormRef}>
+                    <GroupForm
+                        name={formData.Name}
+                        machine={formData.Machine}
+                        port={formData.Port}
+                        schedule={formData.Scheduled}
+                        onChange={handleInputChange}
+                        onClose={handleCloseClick}
+                        onTestConnect={handleTestConnect}
+                        onSubmit={handleFormSubmit}
+                        finalButtonMsg={submitMsg}
+                    />
+                </div>
             )}
         </>
     )
