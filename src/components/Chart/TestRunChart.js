@@ -66,7 +66,7 @@ const TestRunChart = ({ testResults }) => {
     };
 
     return (
-        <div style={{ width: '100%', marginLeft: '7%', marginRight: '10%' }}>
+        <div style={{ width: '100%', marginLeft: '18%' }}>
 
             <Chart
                 options={chartData.options}

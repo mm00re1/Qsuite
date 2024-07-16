@@ -1,16 +1,26 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Autocomplete, TextField, CircularProgress, Chip, Box } from '@mui/material';
 import debounce from 'lodash.debounce';
 
-const MultiDropdown = ({ linkedTests, handleLinkedTestChange, removeLinkedTest }) => {
-
+const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, renderChips, message, group_id }) => {
     const [testNames, setTestNames] = useState([]);
     const [testInputValue, setTestInputValue] = useState('');
     const [loading, setLoading] = useState(false);
+    const groupIdRef = useRef(group_id);
+    
+    useEffect(() => {
+        groupIdRef.current = group_id;
+    }, [group_id]);
 
     const fetchTestOptions = async (inputValue) => {
         setLoading(true);
-        const response = await fetch(`http://127.0.0.1:5000/search_tests?query=${inputValue}&limit=10`);
+        let fetchUrl;
+        if (groupIdRef.current) {
+            fetchUrl = `http://127.0.0.1:5000/search_tests?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`;
+        } else {
+            fetchUrl = `http://127.0.0.1:5000/search_tests?query=${inputValue}&limit=10`;
+        }
+        const response = await fetch(fetchUrl);
         const data = await response.json();
         setTestNames(data.map(test => ({ "test_case_id": test.id, "Test Name": test["Test Name"] })));
         setLoading(false);
@@ -41,7 +51,7 @@ const MultiDropdown = ({ linkedTests, handleLinkedTestChange, removeLinkedTest }
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        label="Add a Linked Test..."
+                        label={message}
                         variant="filled"
                         style={{
                             boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
@@ -69,6 +79,7 @@ const MultiDropdown = ({ linkedTests, handleLinkedTestChange, removeLinkedTest }
                 )}
             />
             {/* Render selected chips below the dropdown */}
+            { renderChips && (
             <Box mt={1} display="flex" flexWrap="wrap" gap={0.5}>
                 {linkedTests.map((test, index) => (
                     <Chip
@@ -81,8 +92,9 @@ const MultiDropdown = ({ linkedTests, handleLinkedTestChange, removeLinkedTest }
                     />
                 ))}
             </Box>
+            )}
         </div>
     );
 };
 
-export default MultiDropdown;
+export default SearchTests;

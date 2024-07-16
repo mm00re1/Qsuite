@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header/Header.js';
 import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
+import CodeDisplay from '../components/CodeDisplay/CodeDisplay.js';
 import CustomButton from '../components/CustomButton/CustomButton.js';
 import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
 import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
@@ -16,7 +17,7 @@ import DynamicTable from '../components/DynamicTable/DynamicTable.js';
 import BackButton from '../components/BackButton/BackButton.js';
 import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
-import MultiDropdown from '../components/MultiDropdown/MultiDropdown.js';
+import SearchTests from '../components/SearchTests/SearchTests.js';
 import './AddTest.css'
 
 
@@ -44,33 +45,44 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [columnList, setColumnList] = useState([]);
     const [tableData, setTableData] = useState([]);
     const [showingStatusHistory, setShowingStatusHistory] = useState(true);
+    const [FreeForm, setFreeForm] = useState(true);
+    const [functionalTest, setFunctionalTest] = useState('');
+    const [testCode, setTestCode] = useState(['']);
     const navigate = useNavigate();
     
-    const fetchTestGroups = () => {
+    const fetchTestGroupsAndData = (date, testId) => {
         fetch('http://127.0.0.1:5000/test_groups/')
             .then(response => response.json())
-            .then(data => {
-                setTestGroups(data);
-            })
-            .catch(error => console.error('Error fetching test groups:', error));
-    };
+            .then(testGroupsData => {
+                setTestGroups(testGroupsData);
+    
+                if (date && testId) {
+                    const formattedDate = date.replace(/\//g, '-');
+                    return fetch(`http://127.0.0.1:5000/get_test_info/?date=${formattedDate}&test_id=${testId}`)
+                        .then(response => response.json())
+                        .then(testData => {
+                            setTestData(testData);
+                            setGroup(testData.group_name);
+                            setName(testData.test_name);
+                            setFreeForm(testData.free_form);
+                            setLinkedTests(testData.dependent_tests);
+                            setLines(testData.test_code.split('\n\n'));
+                            setFunctionalTest(testData.free_form ? '' : testData.test_code);
+                            setColumnList(testData.dependent_tests_columns);
+                            setTableData(testData.dependent_tests);
 
-    const fetchTestData = (date, testId) => {
-        if (date && testId) {
-            const formattedDate = date.replace(/\//g, '-');
-            fetch(`http://127.0.0.1:5000/get_test_info/?date=${formattedDate}&test_id=${testId}`)
-                .then(response => response.json())
-                .then(data => {
-                    setTestData(data);
-                    setGroup(data.group_name);
-                    setName(data.test_name);
-                    setLinkedTests(data.dependent_tests);
-                    setLines(data.test_code.split('\n\n'));
-                    setColumnList(data.dependent_tests_columns);
-                    setTableData(data.dependent_tests);
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
+                            if (!testData.free_form) {
+                                const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
+                                return fetch(`http://127.0.0.1:5000/view_test_code?group_id=${groupId}&test_name=${testData.test_code}`)
+                                    .then(response => response.json())
+                                    .then(testCodeData => {
+                                        setTestCode(testCodeData.split('\n'));
+                                    });
+                            }
+                        });
+                }
+            })
+            .catch(error => console.error('Error:', error));
     };
 
     const addTestToContext = (testId) => {
@@ -78,9 +90,8 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     };
     
     useEffect(() => {
-        fetchTestGroups();
+        fetchTestGroupsAndData(date, testId);
         addTestToHistory(testId);
-        fetchTestData(date, testId);
     }, [testId, date]);
 
     const handleTestNameClick = (test_case_id, dt) => {
@@ -97,7 +108,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     };
 
     const goToGroupDetailPage = () => {
-        navigate(`/testgroup/${date.replace(/\//g, '-')}`);
+        navigate("/testgroup");
     }
 
     const nameChange = (event) => {
@@ -109,13 +120,22 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     };
 
     const executeCode = () => {
-        fetch('http://127.0.0.1:5000/executeQcode/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ code: lines })
-        })
+        let fetchPromise;
+    
+        if (!FreeForm) {
+            const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
+            fetchPromise = fetch(`http://127.0.0.1:5000/execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
+        } else {
+            fetchPromise = fetch('http://127.0.0.1:5000/execute_q_code/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: lines })
+            });
+        }
+    
+        fetchPromise
         .then(response => response.json())
         .then(data => {
             setTestStatus(data.success);
@@ -156,8 +176,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             group_id: selectedGroup.id, // Use the ID instead of the name
             test_name: name,
             id: testData.id,
-            test_code: lines.join('\n\n'), // Combine the lines into a single string
-            expected_output: true, // Adjust based on your requirements
+            test_code: FreeForm ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
             dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
@@ -262,10 +281,12 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     ))}
                     </Select>
                 </FormControl>
-                <MultiDropdown
+                <SearchTests
                     linkedTests={linkedTests}
                     handleLinkedTestChange={handleLinkedTestChange}
                     removeLinkedTest={removeLinkedTest}
+                    renderChips={true}
+                    message={"Add a Linked Test..."}
                 />
             </div>
             <div className="switchButton-TestDetail">
@@ -281,7 +302,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 statusHistory={showingStatusHistory}
             />
             {!(tableData.length === 0) && (
-                <div className="tableContainer">
+                <div className="tableContainerLinkedTests">
                     <DynamicTable
                         columnList={columnList}
                         data={tableData}
@@ -292,7 +313,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 </div>
             )}
             <div style={{marginBottom: '100px'}} />
-            {(!(testData.pass_status !== null ? testData.pass_status : true)) && (
+            {(!((testData.pass_status !== null && testData.pass_status !== undefined) ? testData.pass_status : true)) && (
                 <div
                     style={{
                         display: 'inline-flex',    // Changed to flex to enable flexbox properties
@@ -312,12 +333,44 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     {(
                         <>
                         <RedCircle style={{ width: '33px', height: '33px' }} />
-                        <span style={{ marginLeft: '10px' }}>{"[Previous Error] "} {testData.error_message}</span>
+                            <span style={{ marginLeft: '10px' }}>
+                                {`[Error on ${date.replace(/\//g, '-')} ] ${testData.error_message}`}
+                            </span>
                         </>
                     )}
                 </div>
             )}
-            <CodeTerminal lines={lines} onLinesChange={setLines} />
+            {(FreeForm) && (
+                <CodeTerminal lines={lines} onLinesChange={setLines} />
+            )}
+            {((!FreeForm) && (testCode != [''])) && (
+                <>
+                <div style={{marginLeft: '5%' }}>
+                    <TextField
+                        label="q Test"
+                        variant="filled"
+                        value={functionalTest}
+                        disabled
+                        style={{
+                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                            minWidth: '250px'
+                        }}
+                        InputLabelProps={{
+                            style: {
+                                fontFamily: 'Cascadia Code', // Set the font family of the label text
+                            }
+                        }}
+                        InputProps={{
+                            style: {
+                                backgroundColor: 'white',
+                                fontFamily: 'Cascadia Code',
+                            }
+                        }}
+                    />
+                </div>
+                <CodeDisplay lines={testCode} />
+                </>
+            )}
             {testStatus !== null && (
                 <div
                     style={{

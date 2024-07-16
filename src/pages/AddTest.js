@@ -7,11 +7,14 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { useNavigate } from 'react-router-dom';
 import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
+import CodeDisplay from '../components/CodeDisplay/CodeDisplay.js';
 import CustomButton from '../components/CustomButton/CustomButton.js';
 import './AddTest.css'
 import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
 import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
-import MultiDropdown from '../components/MultiDropdown/MultiDropdown.js';
+import SearchTests from '../components/SearchTests/SearchTests.js';
+import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests.js';
+import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
 
   const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
@@ -38,6 +41,10 @@ const AddTestPage = () => {
     const [testStatus, setTestStatus] = useState(null);
     const [testGroups, setTestGroups] = useState([]);
     const [linkedTests, setLinkedTests] = useState([]);
+    const [FreeForm, setFreeForm] = useState(true);
+    const [functionalTest, setFunctionalTest] = useState(null);
+    const [groupMissing, setGroupMissing] = useState(true);
+    const [testCode, setTestCode] = useState(['']);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -59,30 +66,40 @@ const AddTestPage = () => {
 
     const groupChange = (event) => {
         setGroup(event.target.value);
+        setGroupMissing(false);
     };
 
     const executeCode = () => {
-        fetch('http://127.0.0.1:5000/executeQcode/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ code: lines })
-        })
-        .then(response => response.json())
-        .then(data => {
-            setTestStatus(data.success);
-            setMessage(data.message); // Update the message state
-            setResponse(data.data); // Update the data state
-            setShowResponse(data.data.length > 0);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            setTestStatus(false);
-            setMessage('Failed to execute code.');
-            setResponse([]);
-            setShowResponse(false);
-        });
+        let fetchPromise;
+    
+        if (!FreeForm) {
+            const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
+            fetchPromise = fetch(`http://127.0.0.1:5000/execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
+        } else {
+            fetchPromise = fetch('http://127.0.0.1:5000/execute_q_code/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: lines })
+            });
+        }
+    
+        fetchPromise
+            .then(response => response.json())
+            .then(data => {
+                setTestStatus(data.success);
+                setMessage(data.message); // Update the message state
+                setResponse(data.data); // Update the data state
+                setShowResponse(data.data.length > 0);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                setTestStatus(false);
+                setMessage('Failed to execute code.');
+                setResponse([]);
+                setShowResponse(false);
+            });
     };
     
     const addTest = () => {
@@ -108,9 +125,9 @@ const AddTestPage = () => {
         const testData = {
             group_id: selectedGroup.id, // Use the ID instead of the name
             test_name: name,
-            test_code: lines.join('\n\n'), // Combine the lines into a single string
-            expected_output: true, // Adjust based on your requirements
-            dependencies: Object.values(linkedTests).map(test => test.test_case_id)
+            test_code: FreeForm ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
+            dependencies: Object.values(linkedTests).map(test => test.test_case_id),
+            free_form: FreeForm
         };
         
         fetch('http://127.0.0.1:5000/add_test_case/', {
@@ -140,9 +157,27 @@ const AddTestPage = () => {
         }
     };
 
+    const handleFunctionalTestChange = (event, newValue) => {
+        setFunctionalTest(newValue);
+        if(name === '') {
+            setName(newValue);
+        }
+        const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
+        fetch(`http://127.0.0.1:5000/view_test_code?group_id=${groupId}&test_name=${newValue}`)
+        .then(response => response.json())
+        .then(data => {
+            setTestCode(data.split('\n'));
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    };
+
     const removeLinkedTest = (testToDelete) => {
         const updatedTests = linkedTests.filter(test => test.test_case_id !== testToDelete.test_case_id);
         setLinkedTests(updatedTests);
+    };
+
+    const handleSwitchClick = () => {
+        setFreeForm(!FreeForm);
     };
 
     return (
@@ -204,14 +239,40 @@ const AddTestPage = () => {
                     ))}
                     </Select>
                 </FormControl>
-                <MultiDropdown
+                <SearchTests
                     linkedTests={linkedTests}
                     handleLinkedTestChange={handleLinkedTestChange}
                     removeLinkedTest={removeLinkedTest}
+                    renderChips={true}
+                    message={"Add a Linked Test..."}
                 />
             </div>
             <div style={{ marginTop: '100px' }}/>
-            <CodeTerminal lines={lines} onLinesChange={setLines} />
+            <div className="switchButton-TestDetail">
+                <CustomSwitchButton
+                    leftMessage={"Free-Form"}
+                    rightMessage={"Functional"}
+                    onClick={handleSwitchClick}
+                />
+            </div>
+            {(FreeForm) && (
+                <CodeTerminal lines={lines} onLinesChange={setLines} />
+            )}
+            {(!FreeForm) && (
+                <div style={{ marginLeft: '5%', marginTop: '20px' }}>
+                <SearchFunctionalTests
+                    selectedTest={functionalTest}
+                    group={group}
+                    testGroups={testGroups}
+                    handleTestChange={handleFunctionalTestChange}
+                    message={"Use existing q test"}
+                    groupMissing={groupMissing}
+                />
+                </div>
+            )}
+            {((!FreeForm) && (testCode != [''])) && (
+                <CodeDisplay lines={testCode} />
+            )}
             {testStatus !== null && (
                 <div
                     style={{
@@ -251,7 +312,7 @@ const AddTestPage = () => {
                         font: 'Cascadia Code',
                         whiteSpace: 'pre-wrap',
                         overflow: 'auto',
-                        maxWidth: '68.5%',
+                        maxWidth: '58.5%',
                         borderRadius: '6px',
                         marginLeft: '5%',
                         fontSize: '15px',
