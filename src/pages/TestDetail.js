@@ -50,15 +50,17 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [testCode, setTestCode] = useState(['']);
     const navigate = useNavigate();
     
+    const url = 'http://127.0.0.1:8000/';
+
     const fetchTestGroupsAndData = (date, testId) => {
-        fetch('http://127.0.0.1:5000/test_groups/')
+        fetch(`${url}test_groups/`)
             .then(response => response.json())
             .then(testGroupsData => {
                 setTestGroups(testGroupsData);
     
                 if (date && testId) {
                     const formattedDate = date.replace(/\//g, '-');
-                    return fetch(`http://127.0.0.1:5000/get_test_info/?date=${formattedDate}&test_id=${testId}`)
+                    return fetch(`${url}get_test_info/?date=${formattedDate}&test_id=${testId}`)
                         .then(response => response.json())
                         .then(testData => {
                             setTestData(testData);
@@ -73,7 +75,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
                             if (!testData.free_form) {
                                 const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-                                return fetch(`http://127.0.0.1:5000/view_test_code?group_id=${groupId}&test_name=${testData.test_code}`)
+                                return fetch(`${url}view_test_code?group_id=${groupId}&test_name=${testData.test_code}`)
                                     .then(response => response.json())
                                     .then(testCodeData => {
                                         setTestCode(testCodeData.split('\n'));
@@ -124,9 +126,9 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     
         if (!FreeForm) {
             const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-            fetchPromise = fetch(`http://127.0.0.1:5000/execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
+            fetchPromise = fetch(`${url}execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
         } else {
-            fetchPromise = fetch('http://127.0.0.1:5000/execute_q_code/', {
+            fetchPromise = fetch(`${url}execute_q_code/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -180,7 +182,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
-        fetch('http://127.0.0.1:5000/edit_test_case/', {
+        fetch(`${url}edit_test_case/`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -343,7 +345,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             {(FreeForm) && (
                 <CodeTerminal lines={lines} onLinesChange={setLines} />
             )}
-            {((!FreeForm) && (testCode != [''])) && (
+            {(!FreeForm) && (
                 <>
                 <div style={{marginLeft: '5%' }}>
                     <TextField

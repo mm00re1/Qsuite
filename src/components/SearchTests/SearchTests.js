@@ -8,6 +8,8 @@ const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, re
     const [loading, setLoading] = useState(false);
     const groupIdRef = useRef(group_id);
     
+    const url = 'http://127.0.0.1:8000/';
+
     useEffect(() => {
         groupIdRef.current = group_id;
     }, [group_id]);
@@ -16,9 +18,9 @@ const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, re
         setLoading(true);
         let fetchUrl;
         if (groupIdRef.current) {
-            fetchUrl = `http://127.0.0.1:5000/search_tests?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`;
+            fetchUrl = `${url}search_tests?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`;
         } else {
-            fetchUrl = `http://127.0.0.1:5000/search_tests?query=${inputValue}&limit=10`;
+            fetchUrl = `${url}search_tests?query=${inputValue}&limit=10`;
         }
         const response = await fetch(fetchUrl);
         const data = await response.json();

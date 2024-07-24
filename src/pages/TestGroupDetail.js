@@ -39,12 +39,14 @@ const TestGroupDetail = () => {
     const greyColor = '#f0f0f0';
     const sortOptions = ["Failed", "Passed", "Time Taken"];
 
+    const url = 'http://127.0.0.1:8000/';
+
     useEffect(() => {
         deleteTestHistory()
     }, []);
 
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/test_groups/')
+        fetch(`${url}test_groups/`)
             .then(response => response.json())
             .then(data => {
                 setTestGroups(data);
@@ -53,7 +55,7 @@ const TestGroupDetail = () => {
     }, []);
 
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/get_unique_dates/')
+        fetch(`${url}get_unique_dates/`)
             .then(response => response.json())
             .then(data => {
                 setStartDate(dayjs(data.start_date));
@@ -87,7 +89,7 @@ const TestGroupDetail = () => {
 
     const fetchGroupStats = (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
-        fetch(`http://127.0.0.1:5000/get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`)
+        fetch(`${url}get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`)
             .then(response => response.json())
             .then(data => {
                 setTotalPassed(data.total_passed);
@@ -98,7 +100,7 @@ const TestGroupDetail = () => {
 
     const fetchExecutionTimes = (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
-        fetch(`http://127.0.0.1:5000/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`)
+        fetch(`${url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`)
             .then(response => response.json())
             .then(data => {
                 setGraphData(data.test_data);
@@ -111,7 +113,7 @@ const TestGroupDetail = () => {
         const formattedDate = selectedDate.replace(/\//g, '-');
 
         if (selectedDate) {
-            fetch(`http://127.0.0.1:5000/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`)
+            fetch(`${url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`)
                 .then(response => response.json())
                 .then(data => {
                     setTableData(data.test_data);
@@ -124,7 +126,7 @@ const TestGroupDetail = () => {
 
     const fetchTestsByIds = (selectedDate, group_id, testIds) => {       
         const formattedDate = selectedDate.replace(/\//g, '-'); 
-        fetch(`http://127.0.0.1:5000/get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`)
+        fetch(`${url}get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`)
             .then(response => response.json())
             .then(data => {
                 setTableData(data.test_data);

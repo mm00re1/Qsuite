@@ -9,12 +9,14 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
     const groupRef = useRef(group);
     const testGroupsRef = useRef(testGroups);
 
+    const url = 'http://127.0.0.1:8000/';
+
     useEffect(() => {
         groupRef.current = group;
         testGroupsRef.current = testGroups;
         if (!groupMissing) {
             const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-            fetch(`http://127.0.0.1:5000/all_functional_tests?group_id=${groupId}&limit=10`)
+            fetch(`${url}all_functional_tests?group_id=${groupId}&limit=10`)
                 .then(response => response.json())
                 .then(data => {
                     setTestNames(data);
@@ -27,7 +29,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
     const fetchTestOptions = async (inputValue) => {
         setLoading(true);
         const groupId = (testGroupsRef.current.find(testGroup => testGroup.name === groupRef.current)).id;
-        const response = await fetch(`http://127.0.0.1:5000/search_functional_tests?group_id=${groupId}&query=${inputValue}&limit=10`);
+        const response = await fetch(`${url}search_functional_tests?group_id=${groupId}&query=${inputValue}&limit=10`);
         const data = await response.json();
         setTestNames(data);
         setLoading(false);

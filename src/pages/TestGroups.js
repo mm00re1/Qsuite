@@ -30,8 +30,10 @@ const TestGroups = () => {
     const [columnList, setColumnList] = useState([]);
     const navigate = useNavigate();
 
+    const url = 'http://127.0.0.1:8000/';
+
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/get_unique_dates/')
+        fetch(`${url}get_unique_dates/`)
             .then(response => response.json())
             .then(data => {
                 setStartDate(dayjs(data.start_date));
@@ -61,7 +63,7 @@ const TestGroups = () => {
         if (selectedDate) {
             // Adjust the date format before sending it to the API
             const formattedDate = selectedDate.replace(/\//g, '-');
-            fetch(`http://127.0.0.1:5000/get_test_result_summary/?date=${formattedDate}`)
+            fetch(`${url}get_test_result_summary/?date=${formattedDate}`)
                 .then(response => response.json())
                 .then(data => {
                     setTableData(data.groups_data);

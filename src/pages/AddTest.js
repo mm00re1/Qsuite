@@ -47,8 +47,10 @@ const AddTestPage = () => {
     const [testCode, setTestCode] = useState(['']);
     const navigate = useNavigate();
 
+    const url = 'http://127.0.0.1:8000/';
+
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/test_groups/')
+        fetch(`${url}test_groups/`)
             .then(response => response.json())
             .then(data => {
                 setTestGroups(data);
@@ -74,9 +76,9 @@ const AddTestPage = () => {
     
         if (!FreeForm) {
             const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-            fetchPromise = fetch(`http://127.0.0.1:5000/execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
+            fetchPromise = fetch(`${url}execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
         } else {
-            fetchPromise = fetch('http://127.0.0.1:5000/execute_q_code/', {
+            fetchPromise = fetch(`${url}execute_q_code/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -130,7 +132,7 @@ const AddTestPage = () => {
             free_form: FreeForm
         };
         
-        fetch('http://127.0.0.1:5000/add_test_case/', {
+        fetch(`${url}add_test_case/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -163,7 +165,7 @@ const AddTestPage = () => {
             setName(newValue);
         }
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-        fetch(`http://127.0.0.1:5000/view_test_code?group_id=${groupId}&test_name=${newValue}`)
+        fetch(`${url}view_test_code?group_id=${groupId}&test_name=${newValue}`)
         .then(response => response.json())
         .then(data => {
             setTestCode(data.split('\n'));
@@ -178,6 +180,7 @@ const AddTestPage = () => {
 
     const handleSwitchClick = () => {
         setFreeForm(!FreeForm);
+        console.log("testCode: ", testCode)
     };
 
     return (
@@ -270,7 +273,7 @@ const AddTestPage = () => {
                 />
                 </div>
             )}
-            {((!FreeForm) && (testCode != [''])) && (
+            {((!FreeForm) && (Array.isArray(testCode) && (testCode.length !== 1 || testCode[0] !== ''))) && (
                 <CodeDisplay lines={testCode} />
             )}
             {testStatus !== null && (
