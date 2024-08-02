@@ -21,13 +21,17 @@ const TestGroups = () => {
         name: '',
         server: '',
         port: '',
-        schedule: ''
+        schedule: '',
+        tls: false
     });
     const [startDate, setStartDate] = useState(null);
     const [latestDate, setLatestDate] = useState(null);
     const [missingDates, setMissingDates] = useState(new Set());
     const [tableData, setTableData] = useState([]);
     const [columnList, setColumnList] = useState([]);
+    const [connectionValid, setConnectionValid] = useState(null)
+    const [loading, setLoading] = useState(false);
+    const [connectMessage, setConnectMessage] = useState('')
     const navigate = useNavigate();
 
     const url = 'http://127.0.0.1:8000/';
@@ -36,12 +40,19 @@ const TestGroups = () => {
         fetch(`${url}get_unique_dates/`)
             .then(response => response.json())
             .then(data => {
+                console.log("after parsing date data")
                 setStartDate(dayjs(data.start_date));
+                console.log("st Date set")
                 setLatestDate(dayjs(data.latest_date));
+                console.log("end Date set")
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
                 setMissingDates(missingDatesSet);
+                console.log("missing Date set")
                 if (!globalDt && data.latest_date) {
+                    console.log("latest date: ", data.latest_date)
                     setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
+                } else if (!globalDt && !data.latest_date) {
+                    setGlobalDt(dayjs().format('DD/MM/YYYY'));
                 }
             })
             .catch(error => console.error('Error fetching dates:', error));
@@ -91,41 +102,73 @@ const TestGroups = () => {
         setShowInputs(true);
         setEditGroup(false);
         setSubmitMsg("Add Group")
+        setConnectionValid(null)
         setFormData({
             id: '',
             Name: '',
             Machine: '',
             Port: '',
-            Scheduled: ''
+            Scheduled: '',
+            TLS: false
         });
     };
     
     const handleCloseClick = () => {
         setShowInputs(false);
         setEditGroup(false);
+        setConnectionValid(null)
     };
 
     const onDateChange = (newDate) => {
         const formattedDate = newDate ? newDate.format('DD/MM/YYYY') : '';
         setGlobalDt(formattedDate);
         fetchGroupDetailsAndResults(formattedDate);
+        setConnectionValid(null)
     };
 
     const handleInputChange = (field, value) => {
         setFormData(prevState => ({ ...prevState, [field]: value }));
+        setConnectionValid(null)
     };
 
     const handleTestConnect = () => {
-        console.log("test connection later")
+        setLoading(true);
+        fetch(`${url}test_kdb_connection`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                server: formData.Machine,
+                port: formData.Port,
+                tls: formData.TLS
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === "success") {
+                setConnectionValid(true)
+                setConnectMessage('')
+            } else {
+                setConnectionValid(false)
+                setConnectMessage(data.details)
+                // in future - might use error message in data.details - will require better handling on backend - right now details is a stack trace
+            }
+            setLoading(false); // Stop loading once we get a response
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            setLoading(false); // Stop loading on error
+        });
     };
 
     const handleFormSubmit = () => {
-        const url = editGroup 
-            ? `http://127.0.0.1:5000/edit_test_group/${formData.id}/`
-            : 'http://127.0.0.1:5000/add_test_group/';
+        const query = editGroup 
+            ? `${url}edit_test_group/${formData.id}/`
+            : `${url}add_test_group/`;
         const method = editGroup ? 'PUT' : 'POST';
 
-        fetch(url, {
+        fetch(query, {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
@@ -134,7 +177,8 @@ const TestGroups = () => {
                 name: formData.Name,
                 server: formData.Machine,
                 port: formData.Port,
-                schedule: formData.Scheduled
+                schedule: formData.Scheduled,
+                tls: formData.TLS
             }),
         })
         .then(response => response.json())
@@ -195,6 +239,9 @@ const TestGroups = () => {
                         onTestConnect={handleTestConnect}
                         onSubmit={handleFormSubmit}
                         finalButtonMsg={submitMsg}
+                        connectionValid={connectionValid}
+                        loading={loading}
+                        connectMessage={connectMessage}
                     />
                 </div>
             )}

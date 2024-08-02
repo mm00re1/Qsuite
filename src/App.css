@@ -51,7 +51,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: white;
+  background: inherit; /* Inherit the background color from the parent */
 }
 
 ::-webkit-scrollbar-thumb {

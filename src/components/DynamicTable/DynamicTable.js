@@ -46,7 +46,7 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
             // If text is greater than 20 chars, cut and replace with ...
             return val.length > 25 ? `${val.slice(0, 22)}...` : val;
         } else {
-            return val;
+            return String(val);
         }
     };
 
@@ -72,7 +72,7 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
         <ThemeProvider theme={tableTheme}>
             <div style={{ display: 'flex', position: 'relative', width: '100%' }}>
                 {/* Main Table */}
-                <div style={{ maxWidth: `${totalWidth}px`, margin: '0', paddingRight: '16px' }}>
+                <div style={{ maxWidth: `${totalWidth + 300}px`, margin: '0', paddingRight: '16px' }}>
                 <TableContainer component={Paper} style={{ flexGrow: 1, maxHeight: '500px', minWidth: '250px' }}>
                     <Table>
                         <TableHead>
