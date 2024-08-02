@@ -3,6 +3,7 @@ import Header from '../components/Header/Header.js'
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
+import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { useNavigate } from 'react-router-dom';
@@ -10,25 +11,10 @@ import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
 import CodeDisplay from '../components/CodeDisplay/CodeDisplay.js';
 import CustomButton from '../components/CustomButton/CustomButton.js';
 import './AddTest.css'
-import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
-import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
+import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus.js';
 import SearchTests from '../components/SearchTests/SearchTests.js';
 import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests.js';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
-
-  const ActionButtons = ({ onExecute, onAddTest }) => (
-    <div className="actionButtons">
-      <CustomButton onClick={onExecute}>Execute</CustomButton>
-      <CustomButton onClick={onAddTest}>Save Test</CustomButton>
-    </div>
-  );
-
-// Footer Component
-const Footer = () => (
-  <footer className="footer">
-    <a href="#">Test Creation Tutorial</a>
-  </footer>
-);
 
 // App Component
 const AddTestPage = () => {
@@ -45,6 +31,7 @@ const AddTestPage = () => {
     const [functionalTest, setFunctionalTest] = useState(null);
     const [groupMissing, setGroupMissing] = useState(true);
     const [testCode, setTestCode] = useState(['']);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const url = 'http://127.0.0.1:8000/';
@@ -73,9 +60,9 @@ const AddTestPage = () => {
 
     const executeCode = () => {
         let fetchPromise;
-    
+        const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
+
         if (!FreeForm) {
-            const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
             fetchPromise = fetch(`${url}execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
         } else {
             fetchPromise = fetch(`${url}execute_q_code/`, {
@@ -83,10 +70,11 @@ const AddTestPage = () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ code: lines })
+                body: JSON.stringify({ code: lines, group_id: groupId })  // Pass group_id here
             });
         }
     
+        setLoading(true);
         fetchPromise
             .then(response => response.json())
             .then(data => {
@@ -94,6 +82,7 @@ const AddTestPage = () => {
                 setMessage(data.message); // Update the message state
                 setResponse(data.data); // Update the data state
                 setShowResponse(data.data.length > 0);
+                setLoading(false);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -101,6 +90,7 @@ const AddTestPage = () => {
                 setMessage('Failed to execute code.');
                 setResponse([]);
                 setShowResponse(false);
+                setLoading(false);
             });
     };
     
@@ -276,36 +266,13 @@ const AddTestPage = () => {
             {((!FreeForm) && (Array.isArray(testCode) && (testCode.length !== 1 || testCode[0] !== ''))) && (
                 <CodeDisplay lines={testCode} />
             )}
-            {testStatus !== null && (
-                <div
-                    style={{
-                        display: 'inline-flex',    // Changed to flex to enable flexbox properties
-                        alignItems: 'center', 
-                        padding: '10px 50px 10px 10px',
-                        backgroundColor: '#0C0C0C',
-                        color: testStatus ? '#60F82A' : '#FF4242',
-                        borderRadius: '6px',
-                        font: 'Cascadia Code',
-                        marginLeft: '5%',
-                        marginTop: '40px',
-                        marginBottom: '20px',
-                        fontSize: '17px',
-                        boxShadow: '0px 24px 36px rgba(0, 0, 0, 0.2)',
-                        }}
-                >
-                    {testStatus ? (
-                        <>
-                        <GreenCircle style={{ width: '33px', height: '33px' }} />
-                        <span style={{ marginLeft: '10px' }}>{message}</span>
-                        </>
-                    ) : (
-                        <>
-                        <RedCircle style={{ width: '33px', height: '33px' }} />
-                        <span style={{ marginLeft: '10px' }}>{message}</span>
-                        </>
-                    )}
-                </div>
-            )}
+            <div style={{ marginLeft: '5%', marginBottom: '20px'}}>
+                <KdbQueryStatus
+                    queryStatus={testStatus}
+                    loading={loading}
+                    message={message}
+                />
+            </div>
             {showResponse && (
                 <div
                     style={{
@@ -325,7 +292,15 @@ const AddTestPage = () => {
                     {JSON.stringify(response, null, 2)}
                 </div>
             )}
-            <ActionButtons onExecute={executeCode} onAddTest={addTest}/>
+            <div className="actionButtons">
+                <CustomButton onClick={executeCode} disabled={groupMissing}>Execute</CustomButton>
+                <CustomButton onClick={addTest} disabled={groupMissing}>Save Test</CustomButton>
+                {(FreeForm && groupMissing && (Array.isArray(lines) && (lines.length !== 1 || lines[0] !== ''))) && (
+                    <Typography color="error" style={{ marginTop: '10px', fontFamily: 'Cascadia Code' }}>
+                        A group must be selected to execute q code.
+                    </Typography>
+                )}
+            </div>
         </>
     )
 };

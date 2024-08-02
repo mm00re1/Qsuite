@@ -1,7 +1,9 @@
-.homepage-container {
-    background-color: #22023A;
-    font-family: 'Cascadia Code', monospace;
-    min-height: 100vh; /* Ensure it covers the full viewport height */
+body.purple-page {
+  background-color: #22023A; /* Ensure the entire page background is purple */
+  margin: 0;
+  padding: 0;
+  height: 100%; /* Ensure the body covers the full height */
+  font-family: 'Cascadia Code', monospace;
 }
 
 .header {

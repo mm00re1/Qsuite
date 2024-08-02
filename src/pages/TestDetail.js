@@ -4,7 +4,7 @@ import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
 import CodeDisplay from '../components/CodeDisplay/CodeDisplay.js';
 import CustomButton from '../components/CustomButton/CustomButton.js';
 import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
-import { ReactComponent as GreenCircle } from '../assets/green_circle.svg';
+import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus.js';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import TextField from '@mui/material/TextField';
@@ -48,6 +48,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [FreeForm, setFreeForm] = useState(true);
     const [functionalTest, setFunctionalTest] = useState('');
     const [testCode, setTestCode] = useState(['']);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     
     const url = 'http://127.0.0.1:8000/';
@@ -123,9 +124,9 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
     const executeCode = () => {
         let fetchPromise;
-    
+        const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
+
         if (!FreeForm) {
-            const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
             fetchPromise = fetch(`${url}execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
         } else {
             fetchPromise = fetch(`${url}execute_q_code/`, {
@@ -133,10 +134,11 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ code: lines })
+                body: JSON.stringify({ code: lines, group_id: groupId })  // Pass group_id here
             });
         }
     
+        setLoading(true);
         fetchPromise
         .then(response => response.json())
         .then(data => {
@@ -144,6 +146,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             setMessage(data.message); // Update the message state
             setResponse(data.data); // Update the data state
             setShowResponse(data.data.length > 0);
+            setLoading(false);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -151,6 +154,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             setMessage('Failed to execute code.');
             setResponse([]);
             setShowResponse(false);
+            setLoading(false);
         });
     };
     
@@ -349,7 +353,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 <>
                 <div style={{marginLeft: '5%' }}>
                     <TextField
-                        label="q Test"
+                        label="q Function"
                         variant="filled"
                         value={functionalTest}
                         disabled
@@ -373,36 +377,13 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 <CodeDisplay lines={testCode} />
                 </>
             )}
-            {testStatus !== null && (
-                <div
-                    style={{
-                        display: 'inline-flex',    // Changed to flex to enable flexbox properties
-                        alignItems: 'center', 
-                        padding: '10px 50px 10px 10px',
-                        backgroundColor: '#0C0C0C',
-                        color: testStatus ? '#60F82A' : '#FF4242',
-                        borderRadius: '6px',
-                        font: 'Cascadia Code',
-                        marginLeft: '5%',
-                        marginTop: '40px',
-                        marginBottom: '20px',
-                        fontSize: '17px',
-                        boxShadow: '0px 24px 36px rgba(0, 0, 0, 0.2)',
-                        }}
-                >
-                    {testStatus ? (
-                        <>
-                        <GreenCircle style={{ width: '33px', height: '33px' }} />
-                        <span style={{ marginLeft: '10px' }}>{message}</span>
-                        </>
-                    ) : (
-                        <>
-                        <RedCircle style={{ width: '33px', height: '33px' }} />
-                        <span style={{ marginLeft: '10px' }}>{message}</span>
-                        </>
-                    )}
-                </div>
-            )}
+            <div style={{ marginLeft: '5%', marginBottom: '20px'}}>
+                <KdbQueryStatus
+                    queryStatus={testStatus}
+                    loading={loading}
+                    message={message}
+                />
+            </div>
             {showResponse && (
                 <div
                     style={{

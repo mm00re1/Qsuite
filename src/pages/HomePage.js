@@ -29,6 +29,15 @@ const HomePage = () => {
     const url = 'http://127.0.0.1:8000/';
 
     useEffect(() => {
+        // Add the class to body when the component mounts
+        document.body.classList.add('purple-page');
+            // Clean up by removing the class when the component unmounts
+        return () => {
+            document.body.classList.remove('purple-page');
+        };
+    }, []);
+
+    useEffect(() => {
         fetch(`${url}test_groups/`)
             .then(response => response.json())
             .then(data => {
@@ -74,7 +83,7 @@ const HomePage = () => {
     }
 
     return (
-        <div className="homepage-container">
+        <div>
             <header className="header">
                 <div className="header-section"></div>
                 <div className="header-section header-title">
