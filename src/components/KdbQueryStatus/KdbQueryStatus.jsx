@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
-import { ReactComponent as RedCircle } from '../../assets/red_circle.svg';
-import { ReactComponent as GreenCircle } from '../../assets/green_circle.svg';
+import RedCircle from '../../assets/red_circle.svg?react'
+import GreenCircle from '../../assets/green_circle.svg?react'
 
 
 const KdbQueryStatus = ({ queryStatus, loading, message }) => {

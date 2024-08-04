@@ -3,10 +3,10 @@ import TextField from '@mui/material/TextField';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Typography from '@mui/material/Typography';
-import CustomButton from '../CustomButton/CustomButton.js';
+import CustomButton from '../CustomButton/CustomButton';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
-import KdbQueryStatus from '../KdbQueryStatus/KdbQueryStatus.js';
+import KdbQueryStatus from '../KdbQueryStatus/KdbQueryStatus';
 import '../../pages/TestGroups.css'
 
 const greyColor = '#f0f0f0';

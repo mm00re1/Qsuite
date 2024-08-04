@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import Header from '../components/Header/Header.js';
+import Header from '../components/Header/Header';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
-import DynamicTable from '../components/DynamicTable/DynamicTable.js';
+import DynamicTable from '../components/DynamicTable/DynamicTable';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import { PieChart } from '@mui/x-charts/PieChart';
-import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
 import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
-import TestGroupDetailChart from '../components/TestGroupDetailChart/TestGroupDetailChart.js';
+import TestGroupDetailChart from '../components/Charts/TestGroupDetailChart';
 import './TestGroupDetail.css';
-import SearchTests from '../components/SearchTests/SearchTests.js';
-import BackButton from '../components/BackButton/BackButton.js';
+import SearchTests from '../components/SearchTests/SearchTests';
+import BackButton from '../components/BackButton/BackButton';
 
 const TestGroupDetail = () => {
     const { testGroup, setTestGroup, testGroupId, setTestGroupId, globalDt, setGlobalDt, deleteTestHistory } = useNavigation();
@@ -168,7 +166,7 @@ const TestGroupDetail = () => {
         fetchTestRunResults(formattedDate, testGroupId, '', 1);
     };
 
-    const isMissing = (date: Dayjs) => {
+    const isMissing = (date) => {
         return missingDates.has(dayjs(date).format('YYYY-MM-DD'));
     };
     

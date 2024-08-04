@@ -1,8 +1,8 @@
 import React from 'react';
-import BackButton from '../BackButton/BackButton.js';
-import UserProfile from '../UserProfile/UserProfile.js';
+import BackButton from '../BackButton/BackButton';
+import UserProfile from '../UserProfile/UserProfile';
 import './Header.css';
-import { ReactComponent as QsuiteLogo } from '../../assets/qsuite_logo.svg';
+import QsuiteLogo from '../../../assets/qsuite_logo.svg?react'
 
 const Header = ({ title, onClick }) => (
     <header className="header">
