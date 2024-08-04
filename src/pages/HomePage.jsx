@@ -4,13 +4,11 @@ import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { useNavigate } from 'react-router-dom';
-import UserProfile from '../components/UserProfile/UserProfile.js';
-import CustomButton from '../components/CustomButton/CustomButton.js';
-import TestRunChart from '../components/Chart/TestRunChart';
-import { PieChart } from '@mui/x-charts/PieChart';
+import UserProfile from '../components/UserProfile/UserProfile';
+import CustomButton from '../components/CustomButton/CustomButton';
+import TestRunChart from '../components/Charts/TestRunChart';
 import './HomePage.css';
-import { ReactComponent as QsuiteLogo } from '../assets/qsuite_logo.svg';
-
+import QsuiteLogo from '../../assets/qsuite_logo.svg?react'
 
 const ActionButtons = ({ onViewGroups, onCreateTest }) => (
     <div className="homeButtons">

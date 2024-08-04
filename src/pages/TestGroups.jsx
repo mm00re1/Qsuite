@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Header from '../components/Header/Header.js'
+import Header from '../components/Header/Header'
 import { useNavigate } from 'react-router-dom';
-import CustomButton from '../components/CustomButton/CustomButton.js';
-import DynamicTable from '../components/DynamicTable/DynamicTable.js';
-import GroupForm from '../components/GroupForm/GroupForm.js';
+import CustomButton from '../components/CustomButton/CustomButton';
+import DynamicTable from '../components/DynamicTable/DynamicTable';
+import GroupForm from '../components/GroupForm/GroupForm';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
@@ -198,7 +198,7 @@ const TestGroups = () => {
         setFormData(row);
     };
 
-    const isMissing = (date: Dayjs) => {
+    const isMissing = (date) => {
         return missingDates.has(dayjs(date).format('YYYY-MM-DD'));
     };
     

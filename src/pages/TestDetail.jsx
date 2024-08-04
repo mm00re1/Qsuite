@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/Header/Header.js';
-import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
-import CodeDisplay from '../components/CodeDisplay/CodeDisplay.js';
-import CustomButton from '../components/CustomButton/CustomButton.js';
-import { ReactComponent as RedCircle } from '../assets/red_circle.svg';
-import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus.js';
+import Header from '../components/Header/Header';
+import CodeTerminal from '../components/CodeTerminal/CodeTerminal';
+import CodeDisplay from '../components/CodeDisplay/CodeDisplay';
+import CustomButton from '../components/CustomButton/CustomButton';
+import RedCircle from '../assets/red_circle.svg?react'
+import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import TextField from '@mui/material/TextField';
@@ -12,12 +12,12 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import SingleTestHistoryChart from '../components/SingleTestHistoryChart/SingleTestHistoryChart.js';
-import DynamicTable from '../components/DynamicTable/DynamicTable.js';
-import BackButton from '../components/BackButton/BackButton.js';
+import SingleTestHistoryChart from '../components/Charts/SingleTestHistoryChart';
+import DynamicTable from '../components/DynamicTable/DynamicTable';
+import BackButton from '../components/BackButton/BackButton';
 import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
-import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
-import SearchTests from '../components/SearchTests/SearchTests.js';
+import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
+import SearchTests from '../components/SearchTests/SearchTests';
 import './AddTest.css'
 
 

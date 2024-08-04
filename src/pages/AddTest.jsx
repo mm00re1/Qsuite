@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/Header/Header.js'
+import Header from '../components/Header/Header'
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
@@ -7,14 +7,14 @@ import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { useNavigate } from 'react-router-dom';
-import CodeTerminal from '../components/CodeTerminal/CodeTerminal.js';
-import CodeDisplay from '../components/CodeDisplay/CodeDisplay.js';
-import CustomButton from '../components/CustomButton/CustomButton.js';
+import CodeTerminal from '../components/CodeTerminal/CodeTerminal';
+import CodeDisplay from '../components/CodeDisplay/CodeDisplay';
+import CustomButton from '../components/CustomButton/CustomButton';
 import './AddTest.css'
-import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus.js';
-import SearchTests from '../components/SearchTests/SearchTests.js';
-import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests.js';
-import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton.js';
+import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus';
+import SearchTests from '../components/SearchTests/SearchTests';
+import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests';
+import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 
 // App Component
 const AddTestPage = () => {
