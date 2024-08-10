@@ -19,7 +19,7 @@ import { useNavigation } from '../TestNavigationContext'; // Adjust the path as 
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 import SearchTests from '../components/SearchTests/SearchTests';
 import './AddTest.css'
-
+import { API_URL } from '../constants'
 
 const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
@@ -51,17 +51,15 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     
-    const url = 'http://127.0.0.1:8000/';
-
     const fetchTestGroupsAndData = (date, testId) => {
-        fetch(`${url}test_groups/`)
+        fetch(`${API_URL}test_groups/`)
             .then(response => response.json())
             .then(testGroupsData => {
                 setTestGroups(testGroupsData);
     
                 if (date && testId) {
                     const formattedDate = date.replace(/\//g, '-');
-                    return fetch(`${url}get_test_info/?date=${formattedDate}&test_id=${testId}`)
+                    return fetch(`${API_URL}get_test_info/?date=${formattedDate}&test_id=${testId}`)
                         .then(response => response.json())
                         .then(testData => {
                             setTestData(testData);
@@ -76,7 +74,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
                             if (!testData.free_form) {
                                 const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-                                return fetch(`${url}view_test_code?group_id=${groupId}&test_name=${testData.test_code}`)
+                                return fetch(`${API_URL}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`)
                                     .then(response => response.json())
                                     .then(testCodeData => {
                                         setTestCode(testCodeData.split('\n'));
@@ -127,9 +125,9 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
 
         if (!FreeForm) {
-            fetchPromise = fetch(`${url}execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
+            fetchPromise = fetch(`${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`);
         } else {
-            fetchPromise = fetch(`${url}execute_q_code/`, {
+            fetchPromise = fetch(`${API_URL}execute_q_code/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -186,7 +184,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
-        fetch(`${url}edit_test_case/`, {
+        fetch(`${API_URL}edit_test_case/`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'

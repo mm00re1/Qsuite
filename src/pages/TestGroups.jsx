@@ -1,29 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react'
 import Header from '../components/Header/Header'
-import { useNavigate } from 'react-router-dom';
-import CustomButton from '../components/CustomButton/CustomButton';
-import DynamicTable from '../components/DynamicTable/DynamicTable';
-import GroupForm from '../components/GroupForm/GroupForm';
-import { DatePicker } from '@mui/x-date-pickers';
-import dayjs, { Dayjs } from 'dayjs';
-import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
+import { useNavigate } from 'react-router-dom'
+import CustomButton from '../components/CustomButton/CustomButton'
+import DynamicTable from '../components/DynamicTable/DynamicTable'
+import GroupForm from '../components/GroupForm/GroupForm'
+import { DatePicker } from '@mui/x-date-pickers'
+import dayjs, { Dayjs } from 'dayjs'
+import { useNavigation } from '../TestNavigationContext' // Adjust the path as necessary
 import './TestGroups.css'
+import { API_URL } from '../constants'
 
 // App Component
 const TestGroups = () => {
-    const groupFormRef = useRef(null);
-    const { setTestGroup, setTestGroupId, globalDt, setGlobalDt } = useNavigation();
-    const [submitMsg, setSubmitMsg] = useState("Add Group");
-    const [showInputs, setShowInputs] = useState(false);
-    const [editGroup, setEditGroup] = useState(false);
+    const groupFormRef = useRef(null)
+    const { setTestGroup, setTestGroupId, globalDt, setGlobalDt } = useNavigation()
+    const [submitMsg, setSubmitMsg] = useState("Add Group")
+    const [showInputs, setShowInputs] = useState(false)
+    const [editGroup, setEditGroup] = useState(false)
     const [formData, setFormData] = useState({
         id: '',
-        name: '',
-        server: '',
-        port: '',
-        schedule: '',
-        tls: false
-    });
+        Name: '',
+        Machine: '',
+        Port: '',
+        Scheduled: '',
+        TLS: false
+    })
     const [startDate, setStartDate] = useState(null);
     const [latestDate, setLatestDate] = useState(null);
     const [missingDates, setMissingDates] = useState(new Set());
@@ -34,10 +35,8 @@ const TestGroups = () => {
     const [connectMessage, setConnectMessage] = useState('')
     const navigate = useNavigate();
 
-    const url = 'http://127.0.0.1:8000/';
-
     useEffect(() => {
-        fetch(`${url}get_unique_dates/`)
+        fetch(`${API_URL}get_unique_dates/`)
             .then(response => response.json())
             .then(data => {
                 console.log("after parsing date data")
@@ -74,7 +73,7 @@ const TestGroups = () => {
         if (selectedDate) {
             // Adjust the date format before sending it to the API
             const formattedDate = selectedDate.replace(/\//g, '-');
-            fetch(`${url}get_test_result_summary/?date=${formattedDate}`)
+            fetch(`${API_URL}get_test_result_summary/?date=${formattedDate}`)
                 .then(response => response.json())
                 .then(data => {
                     setTableData(data.groups_data);
@@ -133,7 +132,7 @@ const TestGroups = () => {
 
     const handleTestConnect = () => {
         setLoading(true);
-        fetch(`${url}test_kdb_connection`, {
+        fetch(`${API_URL}test_kdb_connection/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -144,7 +143,12 @@ const TestGroups = () => {
                 tls: formData.TLS
             }),
         })
-        .then(response => response.json())
+	.then(response => {
+	    if (!response.ok) {
+	        throw new Error(`HTTP error! Status: ${response.status}`);
+	    }
+	    return response.json();
+	})
         .then(data => {
             if (data.message === "success") {
                 setConnectionValid(true)
@@ -158,14 +162,16 @@ const TestGroups = () => {
         })
         .catch(error => {
             console.error('Error:', error);
+	    setConnectionValid(false)
+	    setConnectMessage(String(error));
             setLoading(false); // Stop loading on error
         });
     };
 
     const handleFormSubmit = () => {
         const query = editGroup 
-            ? `${url}edit_test_group/${formData.id}/`
-            : `${url}add_test_group/`;
+            ? `${API_URL}edit_test_group/${formData.id}/`
+            : `${API_URL}add_test_group/`;
         const method = editGroup ? 'PUT' : 'POST';
 
         fetch(query, {
@@ -234,6 +240,7 @@ const TestGroups = () => {
                         machine={formData.Machine}
                         port={formData.Port}
                         schedule={formData.Scheduled}
+		        tls={formData.TLS}
                         onChange={handleInputChange}
                         onClose={handleCloseClick}
                         onTestConnect={handleTestConnect}

@@ -11,8 +11,7 @@ import '../../pages/TestGroups.css'
 
 const greyColor = '#f0f0f0';
 
-const GroupForm = ({ name, machine, port, schedule, onChange, onClose, onTestConnect, onSubmit, finalButtonMsg, connectionValid, loading, connectMessage }) => {
-    const [checked, setChecked] = React.useState(false);
+const GroupForm = ({ name, machine, port, schedule, tls, onChange, onClose, onTestConnect, onSubmit, finalButtonMsg, connectionValid, loading, connectMessage }) => {
     const messageRef = useRef(null);
 
     useEffect(() => {
@@ -20,11 +19,6 @@ const GroupForm = ({ name, machine, port, schedule, onChange, onClose, onTestCon
             messageRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [connectionValid]);
-
-    const handleCheckboxChange = (event) => {
-        setChecked(event.target.checked);
-        onChange('TLS', event.target.checked)
-    };
 
     return (
         <div className = "create-edit-group-footer">
@@ -115,7 +109,12 @@ const GroupForm = ({ name, machine, port, schedule, onChange, onClose, onTestCon
                         }}
                     />
                     <FormControlLabel
-                        control={<Checkbox checked={checked} onChange={handleCheckboxChange} color="primary" />}
+                        control={
+			    <Checkbox
+			        checked={tls}
+				onChange={(e) => onChange('TLS', e.target.checked)}
+				color="primary"
+			    />}
                         label={<Typography style={{ fontFamily: 'Cascadia Code' }}>TLS</Typography>}
                     />
                     <div className="button-stack">
