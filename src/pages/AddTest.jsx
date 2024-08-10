@@ -15,6 +15,7 @@ import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus';
 import SearchTests from '../components/SearchTests/SearchTests';
 import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
+import { API_URL } from '../constants'
 
 // App Component
 const AddTestPage = () => {
@@ -34,10 +35,8 @@ const AddTestPage = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const url = 'http://127.0.0.1:8000/';
-
     useEffect(() => {
-        fetch(`${url}test_groups/`)
+        fetch(`${API_URL}test_groups/`)
             .then(response => response.json())
             .then(data => {
                 setTestGroups(data);
@@ -63,9 +62,9 @@ const AddTestPage = () => {
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
 
         if (!FreeForm) {
-            fetchPromise = fetch(`${url}execute_q_function?group_id=${groupId}&test_name=${functionalTest}`);
+            fetchPromise = fetch(`${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`);
         } else {
-            fetchPromise = fetch(`${url}execute_q_code/`, {
+            fetchPromise = fetch(`${API_URL}execute_q_code/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -122,7 +121,7 @@ const AddTestPage = () => {
             free_form: FreeForm
         };
         
-        fetch(`${url}add_test_case/`, {
+        fetch(`${API_URL}add_test_case/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -155,7 +154,7 @@ const AddTestPage = () => {
             setName(newValue);
         }
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-        fetch(`${url}view_test_code?group_id=${groupId}&test_name=${newValue}`)
+        fetch(`${API_URL}view_test_code/?group_id=${groupId}&test_name=${newValue}`)
         .then(response => response.json())
         .then(data => {
             setTestCode(data.split('\n'));

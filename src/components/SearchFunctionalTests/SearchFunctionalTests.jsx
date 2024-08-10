@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Autocomplete, TextField, CircularProgress, Box, Typography } from '@mui/material';
 import debounce from 'lodash.debounce';
+import { API_URL } from '../../constants'
 
 const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChange, message, groupMissing }) => {
     const [testNames, setTestNames] = useState([]);
@@ -9,18 +10,15 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
     const groupRef = useRef(group);
     const testGroupsRef = useRef(testGroups);
 
-    const url = 'http://127.0.0.1:8000/';
-
     useEffect(() => {
         groupRef.current = group;
         testGroupsRef.current = testGroups;
         if (!groupMissing) {
             const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-            fetch(`${url}all_functional_tests?group_id=${groupId}&limit=10`)
+            fetch(`${API_URL}all_functional_tests/?group_id=${groupId}&limit=10`)
                 .then(response => response.json())
                 .then(data => {
                     setTestNames(data);
-                    console.log("data: ", data)
                 })
                 .catch(error => console.error('Error fetching test names:', error));
         }
@@ -29,7 +27,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
     const fetchTestOptions = async (inputValue) => {
         setLoading(true);
         const groupId = (testGroupsRef.current.find(testGroup => testGroup.name === groupRef.current)).id;
-        const response = await fetch(`${url}search_functional_tests?group_id=${groupId}&query=${inputValue}&limit=10`);
+        const response = await fetch(`${API_URL}search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`);
         const data = await response.json();
         setTestNames(data);
         setLoading(false);

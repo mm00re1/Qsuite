@@ -9,6 +9,7 @@ import CustomButton from '../components/CustomButton/CustomButton';
 import TestRunChart from '../components/Charts/TestRunChart';
 import './HomePage.css';
 import QsuiteLogo from '../../assets/qsuite_logo.svg?react'
+import { API_URL } from '../constants'
 
 const ActionButtons = ({ onViewGroups, onCreateTest }) => (
     <div className="homeButtons">
@@ -24,8 +25,6 @@ const HomePage = () => {
     const [testResults, setTestResults] = useState([]); // Add state for test results
     const navigate = useNavigate();
 
-    const url = 'http://127.0.0.1:8000/';
-
     useEffect(() => {
         // Add the class to body when the component mounts
         document.body.classList.add('purple-page');
@@ -36,7 +35,7 @@ const HomePage = () => {
     }, []);
 
     useEffect(() => {
-        fetch(`${url}test_groups/`)
+        fetch(`${API_URL}test_groups/`)
             .then(response => response.json())
             .then(data => {
                 setTestGroupsFull(data);
@@ -47,7 +46,7 @@ const HomePage = () => {
     }, []);
 
     useEffect(() => {
-        fetch(`${url}get_test_results_30_days/`)
+        fetch(`${API_URL}get_test_results_30_days/`)
             .then(response => response.json())
             .then(data => {
                 setTestResults(data);
@@ -63,7 +62,7 @@ const HomePage = () => {
         const selectedGroup = testGroupsFull.find(group => group.name === selectedGroupName);
 
         if (selectedGroup) {
-            fetch(`${url}get_test_results_30_days/?group_id=${selectedGroup.id}`)
+            fetch(`${API_URL}get_test_results_30_days/?group_id=${selectedGroup.id}`)
                 .then(response => response.json())
                 .then(data => {
                     setTestResults(data); // Save the result to the state

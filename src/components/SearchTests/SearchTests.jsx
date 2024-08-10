@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Autocomplete, TextField, CircularProgress, Chip, Box } from '@mui/material';
 import debounce from 'lodash.debounce';
+import { API_URL } from '../../constants'
 
 const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, renderChips, message, group_id }) => {
     const [testNames, setTestNames] = useState([]);
@@ -8,8 +9,6 @@ const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, re
     const [loading, setLoading] = useState(false);
     const groupIdRef = useRef(group_id);
     
-    const url = 'http://127.0.0.1:8000/';
-
     useEffect(() => {
         groupIdRef.current = group_id;
     }, [group_id]);
@@ -18,9 +17,9 @@ const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, re
         setLoading(true);
         let fetchUrl;
         if (groupIdRef.current) {
-            fetchUrl = `${url}search_tests?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`;
+            fetchUrl = `${API_URL}search_tests/?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`;
         } else {
-            fetchUrl = `${url}search_tests?query=${inputValue}&limit=10`;
+            fetchUrl = `${API_URL}search_tests/?query=${inputValue}&limit=10`;
         }
         const response = await fetch(fetchUrl);
         const data = await response.json();
