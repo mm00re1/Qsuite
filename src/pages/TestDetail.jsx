@@ -83,7 +83,11 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                         });
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                // Display a more user-friendly message or notify the user in the UI
+                alert(`An error occurred: ${error.message}`);
+            });
     };
 
     const addTestToContext = (testId) => {

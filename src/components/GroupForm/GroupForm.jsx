@@ -6,12 +6,28 @@ import Typography from '@mui/material/Typography';
 import CustomButton from '../CustomButton/CustomButton';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import dayjs from 'dayjs'
 import KdbQueryStatus from '../KdbQueryStatus/KdbQueryStatus';
 import '../../pages/TestGroups.css'
 
 const greyColor = '#f0f0f0';
 
-const GroupForm = ({ name, machine, port, schedule, tls, onChange, onClose, onTestConnect, onSubmit, finalButtonMsg, connectionValid, loading, connectMessage }) => {
+const GroupForm = ({
+  name,
+  machine,
+  port,
+  schedule,
+  tls,
+  onChange,
+  onClose,
+  onTestConnect,
+  onSubmit,
+  finalButtonMsg,
+  connectionValid,
+  loading,
+  connectMessage,
+}) => {
     const messageRef = useRef(null);
 
     useEffect(() => {
@@ -87,34 +103,43 @@ const GroupForm = ({ name, machine, port, schedule, tls, onChange, onClose, onTe
                             }
                         }}
                     />
-                    <TextField
-                        label="Schedule"
-                        variant="filled"
-                        value={schedule}
-                        onChange={(e) => onChange('Scheduled', e.target.value)}
-                        style={{
-                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                            minWidth: '250px'
-                        }}
-                        InputLabelProps={{
-                            style: {
-                                fontFamily: 'Cascadia Code', // Set the font family of the label text
+                    <TimePicker
+                        label="Scheduled"
+                        value={dayjs(schedule, 'HH:mm')}
+                        onChange={(newValue) => {
+                            if (newValue) {
+                            onChange('Scheduled', newValue.format('HH:mm'));
                             }
                         }}
-                        InputProps={{
-                            style: {
-                                backgroundColor: greyColor,
-                                fontFamily: 'Cascadia Code',
-                            }
-                        }}
+                        renderInput={(params) => (
+                            <TextField
+                            {...params}
+                            variant="filled"
+                            style={{
+                                boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                                minWidth: '250px',
+                            }}
+                            InputLabelProps={{
+                                style: {
+                                    fontFamily: 'Cascadia Code', // Set the font family of the label text
+                                }
+                            }}
+                            InputProps={{
+                                style: {
+                                    backgroundColor: greyColor,
+                                    fontFamily: 'Cascadia Code',
+                                },
+                            }}
+                            />
+                        )}
                     />
                     <FormControlLabel
                         control={
-			    <Checkbox
-			        checked={tls}
-				onChange={(e) => onChange('TLS', e.target.checked)}
-				color="primary"
-			    />}
+                            <Checkbox
+                                checked={tls}
+                                onChange={(e) => onChange('TLS', e.target.checked)}
+                                color="primary"
+                            />}
                         label={<Typography style={{ fontFamily: 'Cascadia Code' }}>TLS</Typography>}
                     />
                     <div className="button-stack">

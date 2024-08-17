@@ -5,7 +5,7 @@ import CustomButton from '../components/CustomButton/CustomButton'
 import DynamicTable from '../components/DynamicTable/DynamicTable'
 import GroupForm from '../components/GroupForm/GroupForm'
 import { DatePicker } from '@mui/x-date-pickers'
-import dayjs, { Dayjs } from 'dayjs'
+import dayjs from 'dayjs'
 import { useNavigation } from '../TestNavigationContext' // Adjust the path as necessary
 import './TestGroups.css'
 import { API_URL } from '../constants'

@@ -10,6 +10,8 @@ import TestRunChart from '../components/Charts/TestRunChart';
 import './HomePage.css';
 import QsuiteLogo from '../../assets/qsuite_logo.svg?react'
 import { API_URL } from '../constants'
+import { fetchWithErrorHandling } from '../utils/api'
+import { useError } from '../ErrorContext.jsx';
 
 const ActionButtons = ({ onViewGroups, onCreateTest }) => (
     <div className="homeButtons">
@@ -23,7 +25,8 @@ const HomePage = () => {
     const [testGroupsFull, setTestGroupsFull] = React.useState([]);
     const [testGroups, setTestGroups] = React.useState([]);
     const [testResults, setTestResults] = useState([]); // Add state for test results
-    const navigate = useNavigate();
+    const navigate = useNavigate()
+    const { showError } = useError()
 
     useEffect(() => {
         // Add the class to body when the component mounts
@@ -35,39 +38,51 @@ const HomePage = () => {
     }, []);
 
     useEffect(() => {
-        fetch(`${API_URL}test_groups/`)
-            .then(response => response.json())
-            .then(data => {
+        async function fetchTestGroups() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}test_groups/`, {}, 'test_groups', showError);
                 setTestGroupsFull(data);
                 const groupNames = data.map(group => group.name);
                 setTestGroups(groupNames);
-            })
-            .catch(error => console.error('Error fetching test groups:', error));
+            } catch (error) {
+                console.error('Error fetching test groups:', error);
+            }
+        }
+
+        fetchTestGroups();
     }, []);
 
     useEffect(() => {
-        fetch(`${API_URL}get_test_results_30_days/`)
-            .then(response => response.json())
-            .then(data => {
+        async function fetchTestResults() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}get_test_results_30_days/`, {}, 'get_test_results_30_days', showError);
                 setTestResults(data);
-            })
-            .catch(error => console.error('Error fetching test results:', error));
-    }, []);
+            } catch (error) {
+                console.error('Error fetching test results:', error);
+            }
+        }
 
-    const onGroupChange = (event) => {
+        fetchTestResults();
+    }, []); 
+
+    const onGroupChange = async (event) => {
         const selectedGroupName = event.target.value;
         setTestGroup(selectedGroupName);
-
-        // Find the group ID from the full group data
         const selectedGroup = testGroupsFull.find(group => group.name === selectedGroupName);
-
+    
         if (selectedGroup) {
-            fetch(`${API_URL}get_test_results_30_days/?group_id=${selectedGroup.id}`)
-                .then(response => response.json())
-                .then(data => {
-                    setTestResults(data); // Save the result to the state
-                })
-                .catch(error => console.error('Error fetching test results:', error));
+            try {
+                // Fetch test results with error handling
+                const data = await fetchWithErrorHandling(
+                    `${API_URL}get_test_results_30_days/?group_id=${selectedGroup.id}`,
+                    {},
+                    'get_test_results_30_days',
+                    showError  // Pass the showError function as the error handler
+                );
+                setTestResults(data);  // Save the result to the state
+            } catch (error) {
+                console.error('Error fetching test results:', error);
+            }
         }
     };
 
