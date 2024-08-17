@@ -16,6 +16,8 @@ import SearchTests from '../components/SearchTests/SearchTests';
 import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 import { API_URL } from '../constants'
+import { fetchWithErrorHandling } from '../utils/api'
+import { useError } from '../ErrorContext.jsx'
 
 // App Component
 const AddTestPage = () => {
@@ -34,14 +36,18 @@ const AddTestPage = () => {
     const [testCode, setTestCode] = useState(['']);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { showError } = useError()
 
     useEffect(() => {
-        fetch(`${API_URL}test_groups/`)
-            .then(response => response.json())
-            .then(data => {
+        async function fetchTestGroups() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}test_groups/`, {}, 'test_groups', showError);
                 setTestGroups(data);
-            })
-            .catch(error => console.error('Error fetching test groups:', error));
+            } catch (error) {
+                console.error('Error fetching test groups:', error);
+            }
+        }
+        fetchTestGroups();
     }, []);
 
     const goToHomePage = () => {
@@ -57,44 +63,54 @@ const AddTestPage = () => {
         setGroupMissing(false);
     };
 
-    const executeCode = () => {
+    const executeCode = async () => {
         let fetchPromise;
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-
-        if (!FreeForm) {
-            fetchPromise = fetch(`${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`);
-        } else {
-            fetchPromise = fetch(`${API_URL}execute_q_code/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ code: lines, group_id: groupId })  // Pass group_id here
-            });
-        }
     
-        setLoading(true);
-        fetchPromise
-            .then(response => response.json())
-            .then(data => {
-                setTestStatus(data.success);
-                setMessage(data.message); // Update the message state
-                setResponse(data.data); // Update the data state
-                setShowResponse(data.data.length > 0);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                setTestStatus(false);
-                setMessage('Failed to execute code.');
-                setResponse([]);
-                setShowResponse(false);
-                setLoading(false);
-            });
+        try {
+            setLoading(true);
+    
+            if (!FreeForm) {
+                fetchPromise = fetchWithErrorHandling(
+                    `${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`,
+                    {},
+                    'execute_q_function',
+                    showError
+                );
+            } else {
+                fetchPromise = fetchWithErrorHandling(
+                    `${API_URL}execute_q_code/`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ code: lines, group_id: groupId }),
+                    },
+                    'execute_q_code',
+                    showError
+                );
+            }
+    
+            const data = await fetchPromise;
+            setTestStatus(data.success);
+            setMessage(data.message); // Update the message state
+            setResponse(data.data); // Update the data state
+            setShowResponse(data.data.length > 0);
+        } catch (error) {
+            console.error('Error:', error);
+            setTestStatus(false);
+            setMessage('Failed to execute code.');
+            setResponse([]);
+            setShowResponse(false);
+        } finally {
+            setLoading(false);
+        }
     };
     
-    const addTest = () => {
-        setShowResponse(false)
+    const addTest = async () => {
+        setShowResponse(false);
+    
         // Check if any of the fields are empty
         if (!name || !group) {
             setTestStatus(false);
@@ -102,42 +118,46 @@ const AddTestPage = () => {
             else if (!group) setMessage('Group is required.');
             return;
         }
-        
+    
         // Find the group object by name
         const selectedGroup = testGroups.find(testGroup => testGroup.name === group);
-
+    
         // If group not found, show an error
         if (!selectedGroup) {
             setTestStatus(false);
             setMessage('Selected group not found.');
             return;
         }
-
+    
         const testData = {
             group_id: selectedGroup.id, // Use the ID instead of the name
             test_name: name,
             test_code: FreeForm ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
             dependencies: Object.values(linkedTests).map(test => test.test_case_id),
-            free_form: FreeForm
+            free_form: FreeForm,
         };
-        
-        fetch(`${API_URL}add_test_case/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(testData)
-        })
-        .then(response => response.json())
-        .then(data => {
+    
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}add_test_case/`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData),
+                },
+                'add_test_case', // Endpoint identifier for error handling
+                showError // Pass the error handling function
+            );
+    
             setTestStatus(true);
             setMessage(data.message);
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             setTestStatus(false);
             setMessage('Failed to add test case.');
-        });
+        }
     };
 
     const handleLinkedTestChange = (event, newValue) => {
@@ -148,18 +168,34 @@ const AddTestPage = () => {
         }
     };
 
-    const handleFunctionalTestChange = (event, newValue) => {
+    const handleFunctionalTestChange = async (event, newValue) => {
         setFunctionalTest(newValue);
         if(name === '') {
             setName(newValue);
         }
+        console.log("new functional test name: ",newValue)
+        if ((newValue === '') || ( newValue == null )) {
+            setTestCode([''])
+            setFunctionalTest(null)
+            return
+        }
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-        fetch(`${API_URL}view_test_code/?group_id=${groupId}&test_name=${newValue}`)
-        .then(response => response.json())
-        .then(data => {
-            setTestCode(data.split('\n'));
-        })
-        .catch(error => console.error('Error fetching data:', error));
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}view_test_code/?group_id=${groupId}&test_name=${newValue}`,
+                {},
+                'view_test_code',
+                showError  // Pass the showError function as the error handler
+            );
+            if (data.success) {
+                setTestCode(data.results.split('\n'))
+            } else {
+                setTestStatus(false)
+                setMessage(data.message)
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
     };
 
     const removeLinkedTest = (testToDelete) => {
@@ -169,7 +205,8 @@ const AddTestPage = () => {
 
     const handleSwitchClick = () => {
         setFreeForm(!FreeForm);
-        console.log("testCode: ", testCode)
+        setTestStatus(null)
+        setMessage('')
     };
 
     return (
@@ -259,6 +296,8 @@ const AddTestPage = () => {
                     handleTestChange={handleFunctionalTestChange}
                     message={"Use existing q test"}
                     groupMissing={groupMissing}
+                    setMessage={setMessage}
+                    setTestStatus={setTestStatus}
                 />
                 </div>
             )}

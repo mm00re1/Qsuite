@@ -2,34 +2,65 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Autocomplete, TextField, CircularProgress, Box, Typography } from '@mui/material';
 import debounce from 'lodash.debounce';
 import { API_URL } from '../../constants'
+import { fetchWithErrorHandling } from '../../utils/api'
+import { useError } from '../../ErrorContext.jsx'
 
-const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChange, message, groupMissing }) => {
+const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChange, message, groupMissing, setMessage, setTestStatus }) => {
     const [testNames, setTestNames] = useState([]);
     const [testInputValue, setTestInputValue] = useState('');
     const [loading, setLoading] = useState(false);
     const groupRef = useRef(group);
     const testGroupsRef = useRef(testGroups);
+    const { showError } = useError()
 
-    useEffect(() => {
-        groupRef.current = group;
-        testGroupsRef.current = testGroups;
-        if (!groupMissing) {
-            const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-            fetch(`${API_URL}all_functional_tests/?group_id=${groupId}&limit=10`)
-                .then(response => response.json())
-                .then(data => {
-                    setTestNames(data);
-                })
-                .catch(error => console.error('Error fetching test names:', error));
+    async function fetchTestNames() {
+        try {
+            groupRef.current = group;
+            testGroupsRef.current = testGroups;
+
+            if (!groupMissing) {
+                const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
+                const data = await fetchWithErrorHandling(
+                    `${API_URL}all_functional_tests/?group_id=${groupId}&limit=10`,
+                    {},
+                    'all_functional_tests',
+                    showError
+                );
+                if (data.success) {
+                    setTestNames(data.results)
+                } else {
+                    setTestStatus(false)
+                    setMessage(data.message)
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching test names:', error);
         }
+    }
+
+    useEffect(() => {        
+        fetchTestNames();
     }, [group, testGroups]);
 
     const fetchTestOptions = async (inputValue) => {
         setLoading(true);
         const groupId = (testGroupsRef.current.find(testGroup => testGroup.name === groupRef.current)).id;
-        const response = await fetch(`${API_URL}search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`);
-        const data = await response.json();
-        setTestNames(data);
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`,
+                {},
+                'search_functional_tests',
+                showError
+            );
+            if (data.success) {
+                setTestNames(data.results)
+            } else {
+                setTestStatus(false)
+                setMessage(data.message)
+            }
+        } catch (error) {
+            console.error('Error fetching functional tests:', error);
+        }
         setLoading(false);
     };
 
@@ -44,13 +75,21 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
         }
     };
 
+    const handleTestChangeWithClear = (event, newValue) => {
+        handleTestChange(event, newValue);
+        if (newValue === null) {
+            fetchTestNames(); // Trigger fetch when the user clears the selection
+        }
+    };
+
+
     return (
         <Box>
             <Autocomplete
                 id="test-search-dropdown"
                 options={testNames}
                 value={selectedTest}
-                onChange={handleTestChange}
+                onChange={handleTestChangeWithClear}
                 inputValue={testInputValue}
                 onInputChange={handleTestInputChange}
                 loading={loading}

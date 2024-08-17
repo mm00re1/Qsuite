@@ -1,27 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Snackbar, Card, Button, Typography, IconButton, Collapse } from '@mui/material';
 import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { endpoint_errors } from '../../constants';
+import { useError } from '../../ErrorContext';  // Make sure to adjust the path
 
-const ErrorBanner = ({ endpoint, errorMessage }) => {
-    const [isVisible, setIsVisible] = useState(true);
+const ErrorBanner = () => {
+    const { errorData, hideError } = useError();  // Access errorData and hideError from context
     const [isExpanded, setIsExpanded] = useState(false);
-    const mappedMessage = endpoint_errors[endpoint] || "Unknown error occurred";
 
-    if (!isVisible) {
-        return null; // Don't render the banner if it's not visible
+    // Map the endpoint to a specific error message
+    const mappedMessage = errorData ? endpoint_errors[errorData.endpoint] || "Unknown error occurred" : "";
+
+    useEffect(() => {
+        if (errorData) {
+            setIsExpanded(false);  // Collapse the details when a new error occurs
+        }
+    }, [errorData]);
+
+    if (!errorData) {
+        return null; // Don't render the banner if there's no error
     }
 
     return (
         <Snackbar
-            open={isVisible}
+            open={Boolean(errorData)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            onClose={() => setIsVisible(false)}
+            onClose={hideError}  // Use hideError to close the banner
             sx={{ 
-                bottom: 16, 
-                left: 10, 
-                right: 10,  // Offset 10px from the left and right side of the screen
-                width: 'calc(100% - 20px)', // Ensure the banner fills the width of the screen with 10px padding on each side
+                bottom: '2%', 
+                left: '5%', 
+                right: '5%',  // Offset 10px from the left and right side of the screen
+                width: '90%', // Ensure the banner fills the width of the screen with 10px padding on each side
             }}
         >
             <Card 
@@ -29,10 +38,8 @@ const ErrorBanner = ({ endpoint, errorMessage }) => {
                     padding: 2, 
                     backgroundColor: '#ff4d4d', 
                     color: 'white',
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    position: 'relative', 
                     boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)',
+                    width: '100%',
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -42,7 +49,7 @@ const ErrorBanner = ({ endpoint, errorMessage }) => {
                     {/* Close button positioned on the right */}
                     <IconButton 
                         color="inherit" 
-                        onClick={() => setIsVisible(false)} 
+                        onClick={hideError}
                         sx={{ marginLeft: 'auto' }}
                     >
                         <CloseIcon />
@@ -70,7 +77,7 @@ const ErrorBanner = ({ endpoint, errorMessage }) => {
                             marginTop: 1 
                         }}
                     >
-                        {errorMessage}
+                        {"api call failure - '" + errorData.endpoint + "' ===> " + errorData.errorMessage}
                     </Typography>
                 </Collapse>
             </Card>

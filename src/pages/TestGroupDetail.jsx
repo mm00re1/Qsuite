@@ -18,6 +18,8 @@ import './TestGroupDetail.css';
 import SearchTests from '../components/SearchTests/SearchTests';
 import BackButton from '../components/BackButton/BackButton';
 import { API_URL } from '../constants'
+import { fetchWithErrorHandling } from '../utils/api'
+import { useError } from '../ErrorContext.jsx'
 
 const TestGroupDetail = () => {
     const { testGroup, setTestGroup, testGroupId, setTestGroupId, globalDt, setGlobalDt, deleteTestHistory } = useNavigation();
@@ -35,7 +37,7 @@ const TestGroupDetail = () => {
     const [totalFailed, setTotalFailed] = useState(0);
     const [graphData, setGraphData] = useState([]);
     const [selectedTests, setSelectedTests] = useState([]);
-    const greyColor = '#f0f0f0';
+    const { showError } = useError()
     const sortOptions = ["Failed", "Passed", "Time Taken"];
 
     useEffect(() => {
@@ -43,27 +45,35 @@ const TestGroupDetail = () => {
     }, []);
 
     useEffect(() => {
-        fetch(`${API_URL}test_groups/`)
-            .then(response => response.json())
-            .then(data => {
+        async function fetchTestGroups() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}test_groups/`, {}, 'test_groups', showError);
                 setTestGroups(data);
-            })
-            .catch(error => console.error('Error fetching test groups:', error));
+            } catch (error) {
+                console.error('Error fetching test groups:', error);
+            }
+        }
+        fetchTestGroups();
     }, []);
 
     useEffect(() => {
-        fetch(`${API_URL}get_unique_dates/`)
-            .then(response => response.json())
-            .then(data => {
+        async function fetchUniqueDates() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}get_unique_dates/`, {}, 'get_unique_dates', showError);
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
                 setMissingDates(missingDatesSet);
                 if (!globalDt && data.latest_date) {
                     setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
+                } else if (!globalDt && !data.latest_date) {
+                    setGlobalDt(dayjs().format('DD/MM/YYYY'));
                 }
-            })
-            .catch(error => console.error('Error fetching dates:', error));
+            } catch (error) {
+                console.error('Error fetching dates:', error);
+            }
+        }
+        fetchUniqueDates()
     }, [globalDt]);
 
     useEffect(() => {
@@ -84,53 +94,72 @@ const TestGroupDetail = () => {
         }
     }, [testGroups]);
 
-    const fetchGroupStats = (selectedDate, group_id) => {
+    const fetchGroupStats = async (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
-        fetch(`${API_URL}get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`)
-            .then(response => response.json())
-            .then(data => {
-                setTotalPassed(data.total_passed);
-                setTotalFailed(data.total_failed);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`,
+                {},
+                'get_test_group_stats',
+                showError
+            )
+            setTotalPassed(data.total_passed)
+            setTotalFailed(data.total_failed)
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
     }
 
-    const fetchExecutionTimes = (selectedDate, group_id) => {
+    const fetchExecutionTimes = async (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
-        fetch(`${API_URL}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`)
-            .then(response => response.json())
-            .then(data => {
-                setGraphData(data.test_data);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
+                {},
+                'get_test_results_by_day',
+                showError
+            )
+            setGraphData(data.test_data)
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
     }
 
-    const fetchTestRunResults = (selectedDate, group_id, sortStyle, pageNumber = 1) => {
-        let fetchUrl;
+    const fetchTestRunResults = async (selectedDate, group_id, sortStyle, pageNumber = 1) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
 
         if (selectedDate) {
-            fetch(`${API_URL}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`)
-                .then(response => response.json())
-                .then(data => {
-                    setTableData(data.test_data);
-                    setColumnList(data.columnList);
-                    setTotalPages(data.total_pages);
-                })
-                .catch(error => console.error('Error fetching data:', error));
+            try {
+                const data = await fetchWithErrorHandling(
+                    `${API_URL}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`,
+                    {},
+                    'get_test_results_by_day',
+                    showError
+                )
+                setTableData(data.test_data)
+                setColumnList(data.columnList)
+                setTotalPages(data.total_pages)
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
         }
     };
 
-    const fetchTestsByIds = (selectedDate, group_id, testIds) => {       
+    const fetchTestsByIds = async (selectedDate, group_id, testIds) => {       
         const formattedDate = selectedDate.replace(/\//g, '-'); 
-        fetch(`${API_URL}get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`)
-            .then(response => response.json())
-            .then(data => {
-                setTableData(data.test_data);
-                setColumnList(data.columnList);
-                setTotalPages(1);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
+                {},
+                'get_tests_by_ids',
+                showError
+            )
+            setTableData(data.test_data)
+            setColumnList(data.columnList)
+            setTotalPages(1)
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
     };
 
     const goToGroupsPage = () => {
