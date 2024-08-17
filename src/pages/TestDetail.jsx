@@ -20,6 +20,8 @@ import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 import SearchTests from '../components/SearchTests/SearchTests';
 import './AddTest.css'
 import { API_URL } from '../constants'
+import { fetchWithErrorHandling } from '../utils/api'
+import { useError } from '../ErrorContext.jsx'
 
 const ActionButtons = ({ onExecute, onAddTest }) => (
     <div className="actionButtons">
@@ -50,40 +52,40 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [testCode, setTestCode] = useState(['']);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { showError } = useError()
     
-    const fetchTestGroupsAndData = (date, testId) => {
-        fetch(`${API_URL}test_groups/`)
-            .then(response => response.json())
-            .then(testGroupsData => {
-                setTestGroups(testGroupsData);
-    
-                if (date && testId) {
-                    const formattedDate = date.replace(/\//g, '-');
-                    return fetch(`${API_URL}get_test_info/?date=${formattedDate}&test_id=${testId}`)
-                        .then(response => response.json())
-                        .then(testData => {
-                            setTestData(testData);
-                            setGroup(testData.group_name);
-                            setName(testData.test_name);
-                            setFreeForm(testData.free_form);
-                            setLinkedTests(testData.dependent_tests);
-                            setLines(testData.test_code.split('\n\n'));
-                            setFunctionalTest(testData.free_form ? '' : testData.test_code);
-                            setColumnList(testData.dependent_tests_columns);
-                            setTableData(testData.dependent_tests);
+    const fetchTestGroupsAndData = async (date, testId) => {
+        try {
+            const testGroupsData = await fetchWithErrorHandling(`${API_URL}test_groups/`, {}, 'test_groups', showError);
+            setTestGroups(testGroupsData);
+            if (date && testId) {
+                const formattedDate = date.replace(/\//g, '-');
+                const testData = await fetchWithErrorHandling(`${API_URL}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info', showError)
+                setTestData(testData);
+                setGroup(testData.group_name);
+                setName(testData.test_name);
+                setFreeForm(testData.free_form);
+                setLinkedTests(testData.dependent_tests);
+                setLines(testData.test_code.split('\n\n'));
+                setFunctionalTest(testData.free_form ? '' : testData.test_code);
+                setColumnList(testData.dependent_tests_columns);
+                setTableData(testData.dependent_tests);
 
-                            if (!testData.free_form) {
-                                const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-                                return fetch(`${API_URL}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`)
-                                    .then(response => response.json())
-                                    .then(testCodeData => {
-                                        setTestCode(testCodeData.split('\n'));
-                                    });
-                            }
-                        });
+                if (!testData.free_form) {
+                    const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
+                    const testCodeData = await fetchWithErrorHandling(`${API_URL}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code', showError)
+                    if (testCodeData.success) {
+                        setTestCode(testCodeData.results.split('\n'))
+                    } else {
+                        setTestStatus(false)
+                        setMessage(testCodeData.message)
+                    }
                 }
-            })
-            .catch(error => console.error('Error:', error));
+            }
+
+        } catch (error) {
+            console.error('Error fetching test data:', error);
+        }
     };
 
     const addTestToContext = (testId) => {
@@ -120,43 +122,50 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
         setGroup(event.target.value);
     };
 
-    const executeCode = () => {
+    const executeCode = async () => {
         let fetchPromise;
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
 
-        if (!FreeForm) {
-            fetchPromise = fetch(`${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`);
-        } else {
-            fetchPromise = fetch(`${API_URL}execute_q_code/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ code: lines, group_id: groupId })  // Pass group_id here
-            });
-        }
+        try {
+            setLoading(true);
+            if (!FreeForm) {
+                fetchPromise = fetchWithErrorHandling(
+                    `${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
+                    {},
+                    'execute_q_function',
+                    showError
+            } else {
+                fetchPromise = fetchWithErrorHandling(
+                    `${API_URL}execute_q_code/`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ code: lines, group_id: groupId }),
+                    },
+                    'execute_q_code',
+                    showError
+                );
+            }
     
-        setLoading(true);
-        fetchPromise
-        .then(response => response.json())
-        .then(data => {
+            const data = await fetchPromise;
             setTestStatus(data.success);
             setMessage(data.message); // Update the message state
             setResponse(data.data); // Update the data state
             setShowResponse(data.data.length > 0);
-            setLoading(false);
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             setTestStatus(false);
             setMessage('Failed to execute code.');
             setResponse([]);
             setShowResponse(false);
+        } finally {
             setLoading(false);
-        });
+        }
     };
     
-    const editTest = () => {
+    const editTest = async () => {
         setShowResponse(false)
         // Check if any of the fields are empty
         if (!name || !group) {
@@ -184,25 +193,29 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
-        fetch(`${API_URL}edit_test_case/`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(editedTestData)
-        })
-        .then(response => response.json())
-        .then(data => {
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}edit_test_case/`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(editedTestData),
+                },
+                'edit_test_case', // Endpoint identifier for error handling
+                showError // Pass the error handling function
+            );
+    
             setTestStatus(true);
             setMessage(data.message);
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             setTestStatus(false);
-            setMessage('Failed to add test case.');
-        });
+            setMessage('Failed to edit test case.');
+        }
     };
-
+    
     const handleLinkedTestChange = (event, newValue) => {
         // Avoid adding duplicates
         if (!linkedTests.some(test => test.test_case_id === newValue.test_case_id)) {

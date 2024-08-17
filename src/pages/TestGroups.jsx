@@ -5,10 +5,12 @@ import CustomButton from '../components/CustomButton/CustomButton'
 import DynamicTable from '../components/DynamicTable/DynamicTable'
 import GroupForm from '../components/GroupForm/GroupForm'
 import { DatePicker } from '@mui/x-date-pickers'
-import dayjs, { Dayjs } from 'dayjs'
+import dayjs from 'dayjs'
 import { useNavigation } from '../TestNavigationContext' // Adjust the path as necessary
 import './TestGroups.css'
 import { API_URL } from '../constants'
+import { fetchWithErrorHandling } from '../utils/api'
+import { useError } from '../ErrorContext.jsx'
 
 // App Component
 const TestGroups = () => {
@@ -34,27 +36,26 @@ const TestGroups = () => {
     const [loading, setLoading] = useState(false);
     const [connectMessage, setConnectMessage] = useState('')
     const navigate = useNavigate();
+    const { showError } = useError()
 
     useEffect(() => {
-        fetch(`${API_URL}get_unique_dates/`)
-            .then(response => response.json())
-            .then(data => {
-                console.log("after parsing date data")
+        async function fetchUniqueDates() {
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}get_unique_dates/`, {}, 'get_unique_dates', showError);
                 setStartDate(dayjs(data.start_date));
-                console.log("st Date set")
                 setLatestDate(dayjs(data.latest_date));
-                console.log("end Date set")
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
                 setMissingDates(missingDatesSet);
-                console.log("missing Date set")
                 if (!globalDt && data.latest_date) {
-                    console.log("latest date: ", data.latest_date)
                     setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
                 } else if (!globalDt && !data.latest_date) {
                     setGlobalDt(dayjs().format('DD/MM/YYYY'));
                 }
-            })
-            .catch(error => console.error('Error fetching dates:', error));
+            } catch (error) {
+                console.error('Error fetching dates:', error);
+            }
+        }
+        fetchUniqueDates()
     }, [globalDt]);
 
     useEffect(() => {
@@ -69,21 +70,18 @@ const TestGroups = () => {
         }
     }, [showInputs, editGroup]);
     
-    const fetchGroupDetailsAndResults = (selectedDate) => {
+    const fetchGroupDetailsAndResults = async (selectedDate) => {
         if (selectedDate) {
-            // Adjust the date format before sending it to the API
             const formattedDate = selectedDate.replace(/\//g, '-');
-            fetch(`${API_URL}get_test_result_summary/?date=${formattedDate}`)
-                .then(response => response.json())
-                .then(data => {
-                    setTableData(data.groups_data);
-                    setColumnList(data.columnList); // New state to store column list
-                })
-                .catch(error => console.error('Error fetching data:', error));
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}get_test_result_summary/?date=${formattedDate}`, {}, 'get_test_result_summary', showError);
+                setTableData(data.groups_data);
+                setColumnList(data.columnList);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
         }
     };
-
-    const greyColor = '#f0f0f0';
 
     const goToHomePage = () => {
         navigate('/');
@@ -130,26 +128,25 @@ const TestGroups = () => {
         setConnectionValid(null)
     };
 
-    const handleTestConnect = () => {
+    const handleTestConnect = async () => {
         setLoading(true);
-        fetch(`${API_URL}test_kdb_connection/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                server: formData.Machine,
-                port: formData.Port,
-                tls: formData.TLS
-            }),
-        })
-	.then(response => {
-	    if (!response.ok) {
-	        throw new Error(`HTTP error! Status: ${response.status}`);
-	    }
-	    return response.json();
-	})
-        .then(data => {
+        try {
+            const data = await fetchWithErrorHandling(
+                `${API_URL}test_kdb_connection/`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        server: formData.Machine,
+                        port: formData.Port,
+                        tls: formData.TLS
+                    }),
+                },
+                'test_kdb_connection',
+                showError
+            )
             if (data.message === "success") {
                 setConnectionValid(true)
                 setConnectMessage('')
@@ -158,43 +155,40 @@ const TestGroups = () => {
                 setConnectMessage(data.details)
                 // in future - might use error message in data.details - will require better handling on backend - right now details is a stack trace
             }
-            setLoading(false); // Stop loading once we get a response
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
-	    setConnectionValid(false)
-	    setConnectMessage(String(error));
-            setLoading(false); // Stop loading on error
-        });
+            setConnectionValid(false)
+            setConnectMessage(String(error));
+        }
+        setLoading(false);
     };
 
-    const handleFormSubmit = () => {
-        const query = editGroup 
-            ? `${API_URL}edit_test_group/${formData.id}/`
-            : `${API_URL}add_test_group/`;
-        const method = editGroup ? 'PUT' : 'POST';
-
-        fetch(query, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name: formData.Name,
-                server: formData.Machine,
-                port: formData.Port,
-                schedule: formData.Scheduled,
-                tls: formData.TLS
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
+    const handleFormSubmit = async () => {
+        try {
+            const data = await fetchWithErrorHandling(
+                editGroup ? `${API_URL}edit_test_group/${formData.id}/` : `${API_URL}add_test_group/`,
+                {
+                    method: editGroup ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: formData.Name,
+                        server: formData.Machine,
+                        port: formData.Port,
+                        schedule: formData.Scheduled,
+                        tls: formData.TLS
+                    }),
+                },
+                'edit_test_group',
+                showError
+            )
             fetchGroupDetailsAndResults(globalDt);
             handleCloseClick();
-        })
-        .catch(error => {
+
+        } catch (error) {
             console.error('Error:', error);
-        });
+        }
     };
 
     const handleEditButtonClick = (row) => {

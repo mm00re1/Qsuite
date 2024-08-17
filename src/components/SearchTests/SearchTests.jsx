@@ -2,12 +2,15 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Autocomplete, TextField, CircularProgress, Chip, Box } from '@mui/material';
 import debounce from 'lodash.debounce';
 import { API_URL } from '../../constants'
+import { fetchWithErrorHandling } from '../../utils/api'
+import { useError } from '../../ErrorContext.jsx';
 
 const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, renderChips, message, group_id }) => {
     const [testNames, setTestNames] = useState([]);
     const [testInputValue, setTestInputValue] = useState('');
     const [loading, setLoading] = useState(false);
     const groupIdRef = useRef(group_id);
+    const { showError } = useError()
     
     useEffect(() => {
         groupIdRef.current = group_id;
@@ -15,15 +18,24 @@ const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, re
 
     const fetchTestOptions = async (inputValue) => {
         setLoading(true);
-        let fetchUrl;
-        if (groupIdRef.current) {
-            fetchUrl = `${API_URL}search_tests/?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`;
-        } else {
-            fetchUrl = `${API_URL}search_tests/?query=${inputValue}&limit=10`;
+        try {
+            const data = groupIdRef.current
+            ? await fetchWithErrorHandling(
+                `${API_URL}search_tests/?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`,
+                {},
+                'search_tests',
+                showError
+              )
+            : await fetchWithErrorHandling(
+                `${API_URL}search_tests/?query=${inputValue}&limit=10`,
+                {},
+                'search_tests',
+                showError
+              )
+            setTestNames(data.map(test => ({ "test_case_id": test.id, "Test Name": test["Test Name"] })));
+        } catch (error) {
+            console.error('Error fetching test groups:', error);
         }
-        const response = await fetch(fetchUrl);
-        const data = await response.json();
-        setTestNames(data.map(test => ({ "test_case_id": test.id, "Test Name": test["Test Name"] })));
         setLoading(false);
     };
 
