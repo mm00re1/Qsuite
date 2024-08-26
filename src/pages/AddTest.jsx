@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { useNavigate } from 'react-router-dom';
+import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import CodeTerminal from '../components/CodeTerminal/CodeTerminal';
 import CodeDisplay from '../components/CodeDisplay/CodeDisplay';
 import CustomButton from '../components/CustomButton/CustomButton';
@@ -15,12 +16,12 @@ import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus';
 import SearchTests from '../components/SearchTests/SearchTests';
 import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
-import { API_URL } from '../constants'
 import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
 
-// App Component
+
 const AddTestPage = () => {
+    const { env, setEnv, environments } = useNavigation();
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
     const [lines, setLines] = useState(['']); // Start with one empty line
@@ -41,7 +42,7 @@ const AddTestPage = () => {
     useEffect(() => {
         async function fetchTestGroups() {
             try {
-                const data = await fetchWithErrorHandling(`${API_URL}test_groups/`, {}, 'test_groups', showError);
+                const data = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
                 setTestGroups(data);
             } catch (error) {
                 console.error('Error fetching test groups:', error);
@@ -72,14 +73,14 @@ const AddTestPage = () => {
     
             if (!FreeForm) {
                 fetchPromise = fetchWithErrorHandling(
-                    `${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`,
+                    `${environments[env].url}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`,
                     {},
                     'execute_q_function',
                     showError
                 );
             } else {
                 fetchPromise = fetchWithErrorHandling(
-                    `${API_URL}execute_q_code/`,
+                    `${environments[env].url}execute_q_code/`,
                     {
                         method: 'POST',
                         headers: {
@@ -130,7 +131,7 @@ const AddTestPage = () => {
         }
     
         const testData = {
-            group_id: selectedGroup.id, // Use the ID instead of the name
+            group_id: selectedGroup.id,
             test_name: name,
             test_code: FreeForm ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
             dependencies: Object.values(linkedTests).map(test => test.test_case_id),
@@ -139,7 +140,7 @@ const AddTestPage = () => {
     
         try {
             const data = await fetchWithErrorHandling(
-                `${API_URL}add_test_case/`,
+                `${environments[env].url}add_test_case/`,
                 {
                     method: 'POST',
                     headers: {
@@ -170,11 +171,10 @@ const AddTestPage = () => {
 
     const handleFunctionalTestChange = async (event, newValue) => {
         setFunctionalTest(newValue);
-        if(name === '') {
+        if (name === '') {
             setName(newValue);
         }
-        console.log("new functional test name: ",newValue)
-        if ((newValue === '') || ( newValue == null )) {
+        if (newValue === '' || newValue == null) {
             setTestCode([''])
             setFunctionalTest(null)
             return
@@ -182,10 +182,10 @@ const AddTestPage = () => {
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
         try {
             const data = await fetchWithErrorHandling(
-                `${API_URL}view_test_code/?group_id=${groupId}&test_name=${newValue}`,
+                `${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${newValue}`,
                 {},
                 'view_test_code',
-                showError  // Pass the showError function as the error handler
+                showError
             );
             if (data.success) {
                 setTestCode(data.results.split('\n'))
@@ -212,6 +212,45 @@ const AddTestPage = () => {
     return (
         <>
             <Header title={"All Test Runs"} onClick={goToHomePage}/>
+            <div style={{ paddingTop: "20px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
+                <FormControl variant="standard" sx={{ m: 1}} >
+                    <Select
+                        value={env}
+                        label="env"
+                        onChange={(event) => setEnv(event.target.value)}
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: 0,
+                            fontFamily: 'Cascadia Code',
+                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
+                            minWidth: '80px',
+                        }}
+                        MenuProps={{
+                            PaperProps: {
+                            style: {
+                                backgroundColor: 'white', // Dropdown box color
+                            }
+                            }
+                        }}
+                        inputProps={{
+                            style: {
+                              height: '20px', // Adjust the height here
+                              padding: '2px 5px', // Adjust the padding to control content space
+                            },
+                          }}
+                        >
+                        {Object.keys(environments).map((env) => (
+                            <MenuItem
+                                key={env}
+                                value={env}
+                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
+                            >
+                                {env}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </div>
             <div className="AddTestFields">
                 <div className="name-input-container">
                     <TextField

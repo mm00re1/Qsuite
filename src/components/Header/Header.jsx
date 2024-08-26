@@ -1,7 +1,7 @@
-import React from 'react';
-import BackButton from '../BackButton/BackButton';
-import UserProfile from '../UserProfile/UserProfile';
-import './Header.css';
+import React from 'react'
+import BackButton from '../BackButton/BackButton'
+import EnvSetingsIcon from '../UserProfile/EnvSetingsIcon'
+import './Header.css'
 import QsuiteLogo from '../../../assets/qsuite_logo.svg?react'
 
 const Header = ({ title, onClick }) => (
@@ -16,9 +16,9 @@ const Header = ({ title, onClick }) => (
         </div>
       </div>
       <div className="header-section">
-        <UserProfile />
+        <EnvSetingsIcon />
       </div>
     </header>
-  );
+  )
 
-export default Header;
+export default Header

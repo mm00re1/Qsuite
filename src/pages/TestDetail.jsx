@@ -32,7 +32,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
   const TestDetail = () => {
     const { testId, date } = useParams();
-    const { testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
+    const { env, setEnv, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
 
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
@@ -242,6 +242,45 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 <BackButton title={"Previous Test"} onClick={goToPrevTestPage} textColor={'#3E0A66'} fontSize={'16px'} />
               </div>
             )}
+            <div style={{ paddingTop: "20px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
+                <FormControl variant="standard" sx={{ m: 1}} >
+                    <Select
+                        value={env}
+                        label="env"
+                        onChange={(event) => setEnv(event.target.value)}
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: 0,
+                            fontFamily: 'Cascadia Code',
+                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
+                            minWidth: '80px',
+                        }}
+                        MenuProps={{
+                            PaperProps: {
+                            style: {
+                                backgroundColor: 'white', // Dropdown box color
+                            }
+                            }
+                        }}
+                        inputProps={{
+                            style: {
+                              height: '20px', // Adjust the height here
+                              padding: '2px 5px', // Adjust the padding to control content space
+                            },
+                          }}
+                        >
+                        {environments.map((env, index) => (
+                            <MenuItem
+                                key={index}
+                                value={env.environment} // Use option.name for the value
+                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
+                            >
+                                {env.environment}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </div>
             <div className="AddTestFields">
                 <div className="name-input-container">
                     <TextField

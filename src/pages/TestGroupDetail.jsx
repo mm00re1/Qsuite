@@ -22,7 +22,7 @@ import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
 
 const TestGroupDetail = () => {
-    const { testGroup, setTestGroup, testGroupId, setTestGroupId, globalDt, setGlobalDt, deleteTestHistory } = useNavigation();
+    const { testGroup, setTestGroup, testGroupId, setTestGroupId, globalDt, setGlobalDt, env, setEnv, environments, deleteTestHistory } = useNavigation();
     const navigate = useNavigate();
     const [sortOption, setSortOption] = useState('');
     const [testGroups, setTestGroups] = useState([]);
@@ -246,6 +246,45 @@ const TestGroupDetail = () => {
     return (
         <>
             <Header title={"All Test Groups"} onClick={goToGroupsPage} />
+            <div style={{ paddingTop: "20px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
+                <FormControl variant="standard" sx={{ m: 1}} >
+                    <Select
+                        value={env}
+                        label="env"
+                        onChange={(event) => setEnv(event.target.value)}
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: 0,
+                            fontFamily: 'Cascadia Code',
+                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
+                            minWidth: '80px',
+                        }}
+                        MenuProps={{
+                            PaperProps: {
+                            style: {
+                                backgroundColor: 'white', // Dropdown box color
+                            }
+                            }
+                        }}
+                        inputProps={{
+                            style: {
+                              height: '20px', // Adjust the height here
+                              padding: '2px 5px', // Adjust the padding to control content space
+                            },
+                          }}
+                        >
+                        {environments.map((env, index) => (
+                            <MenuItem
+                                key={index}
+                                value={env.environment} // Use option.name for the value
+                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
+                            >
+                                {env.environment}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </div>
             <div className="switchButton">
                 <DatePicker
                     value={dayjs(globalDt, 'DD/MM/YYYY')}
