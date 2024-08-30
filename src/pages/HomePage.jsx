@@ -4,23 +4,16 @@ import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { useNavigate } from 'react-router-dom';
-import UserProfile from '../components/UserProfile/UserProfile';
 import CustomButton from '../components/CustomButton/CustomButton';
 import TestRunChart from '../components/Charts/TestRunChart';
 import './HomePage.css';
-import QsuiteLogo from '../../assets/qsuite_logo.svg?react'
-import { API_URL } from '../constants'
+import { useNavigation } from '../TestNavigationContext'
 import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx';
-
-const ActionButtons = ({ onViewGroups, onCreateTest }) => (
-    <div className="homeButtons">
-      <CustomButton onClick={onViewGroups}>Test Groups</CustomButton>
-      <CustomButton onClick={onCreateTest}>Create Test</CustomButton>
-    </div>
-);
+import Header from '../components/Header/Header'
 
 const HomePage = () => {
+    const { env, setEnv, environments } = useNavigation();
     const [testGroup, setTestGroup] = React.useState("");
     const [testGroupsFull, setTestGroupsFull] = React.useState([]);
     const [testGroups, setTestGroups] = React.useState([]);
@@ -40,7 +33,7 @@ const HomePage = () => {
     useEffect(() => {
         async function fetchTestGroups() {
             try {
-                const data = await fetchWithErrorHandling(`${API_URL}test_groups/`, {}, 'test_groups', showError);
+                const data = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
                 setTestGroupsFull(data);
                 const groupNames = data.map(group => group.name);
                 setTestGroups(groupNames);
@@ -55,7 +48,7 @@ const HomePage = () => {
     useEffect(() => {
         async function fetchTestResults() {
             try {
-                const data = await fetchWithErrorHandling(`${API_URL}get_test_results_30_days/`, {}, 'get_test_results_30_days', showError);
+                const data = await fetchWithErrorHandling(`${environments[env].url}get_test_results_30_days/`, {}, 'get_test_results_30_days', showError);
                 setTestResults(data);
             } catch (error) {
                 console.error('Error fetching test results:', error);
@@ -74,7 +67,7 @@ const HomePage = () => {
             try {
                 // Fetch test results with error handling
                 const data = await fetchWithErrorHandling(
-                    `${API_URL}get_test_results_30_days/?group_id=${selectedGroup.id}`,
+                    `${environments[env].url}get_test_results_30_days/?group_id=${selectedGroup.id}`,
                     {},
                     'get_test_results_30_days',
                     showError  // Pass the showError function as the error handler
@@ -96,22 +89,11 @@ const HomePage = () => {
 
     return (
         <div>
-            <header className="header">
-                <div className="header-section"></div>
-                <div className="header-section header-title">
-                    <div className="title-logo-container">
-                        <div>Qsuite</div>
-                        <QsuiteLogo style={{ width: '52px', height: '52px', marginLeft: '10px' }} />
-                    </div>
-                </div>
-                <div className="header-section">
-                <UserProfile />
-                </div>
-            </header>
+            <Header title={"disabled"} onClick={() => {}} />
             <div className="white-icon-page">
                 <div className="projectSelector">
                     <FormControl variant="filled">
-                    <InputLabel style={{ fontFamily: 'Cascadia Code', color: 'white' }}> Test Group </InputLabel>
+                    <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Test Group </InputLabel>
                         <Select
                         value={testGroup}
                         label="testGroup"
@@ -121,14 +103,14 @@ const HomePage = () => {
                             fontFamily: 'Cascadia Code',
                             boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.2)',
                             minWidth: '250px',
-                            color: 'white',
-                            backgroundColor: '#280543',
+                            //color: 'white',
+                            backgroundColor: 'white',
                         }}
                         MenuProps={{
                             PaperProps: {
                                 style: {
-                                backgroundColor: '#280543', // Dropdown box color
-                                color: 'white',
+                                //backgroundColor: '#280543', // Dropdown box color
+                                //color: 'white',
                                 }
                             }
                             }}
@@ -166,7 +148,17 @@ const HomePage = () => {
 
                 </div>
             </div>
-            <ActionButtons onViewGroups={viewGroups} onCreateTest={createTest}/>
+            <div style={{
+                marginLeft: '0%',
+                marginTop: '50px',
+                marginBottom: '110px',
+                display: 'flex', /* Aligns children inline */
+                justifyContent: 'center', /* Centers the items horizontally */
+                gap: '50px'
+                }}>
+                <CustomButton onClick={viewGroups}>Test Groups</CustomButton>
+                <CustomButton onClick={createTest}>Create Test</CustomButton>
+            </div>
         </div>
   )
 }

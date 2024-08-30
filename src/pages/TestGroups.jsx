@@ -4,33 +4,27 @@ import { useNavigate } from 'react-router-dom'
 import CustomButton from '../components/CustomButton/CustomButton'
 import { DatePicker } from '@mui/x-date-pickers'
 import dayjs from 'dayjs'
-import { useNavigation } from '../TestNavigationContext' // Adjust the path as necessary
+import { useNavigation } from '../TestNavigationContext'
 import './TestGroups.css'
 import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
 import TestGroupRow from '../components/TestGroupRow/TestGroupRow'
+import NewTestGroupRow from '../components/NewTestGroupRow'
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
+import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
 
 // App Component
 const TestGroups = () => {
-    const { env, setEnv, environments, setTestGroup, setTestGroupId, globalDt, setGlobalDt } = useNavigation()
-    const [submitMsg, setSubmitMsg] = useState("Add Group")
+    const { env, setEnv, environments, globalDt, setGlobalDt, groupData, setGroupData } = useNavigation()
     const [notification, setNotification] = useState(null)
     const [notificationSuccess, setNotificationSuccess] = useState(true)
-    const [showInputs, setShowInputs] = useState(false)
-    const [formData, setFormData] = useState({
-        id: '',
-        Name: '',
-        Machine: '',
-        Port: '',
-        Scheduled: '',
-        TLS: false
-    })
     const [startDate, setStartDate] = useState(null);
     const [latestDate, setLatestDate] = useState(null);
     const [missingDates, setMissingDates] = useState(new Set());
-    const [groupData, setGroupData] = useState({});
+    const [newGroupData, setNewGroupData] = useState({});
     const [loading, setLoading] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [groupToDelete, setGroupToDelete] = useState(null);
     const navigate = useNavigate();
     const { showError } = useError()
 
@@ -56,11 +50,11 @@ const TestGroups = () => {
 
     useEffect(() => {
         if (globalDt) {
-            fetchGroupDetailsAndResults(globalDt);
+            fetchGroupDetailsAndResults(globalDt, null);
         }
     }, [globalDt]);
     
-    const fetchGroupDetailsAndResults = async (selectedDate) => {
+    const fetchGroupDetailsAndResults = async (selectedDate, group_id) => {
         if (selectedDate) {
             const formattedDate = selectedDate.replace(/\//g, '-');
             const results = {};
@@ -78,7 +72,12 @@ const TestGroups = () => {
                     console.error(`Error fetching data for ${envName}:`, error);
                 }
             }
-            setGroupData(results);
+            // if group_id is not null, update only that group
+            if (group_id) {
+                setGroupData(prevState => ({ ...prevState, [group_id]: results[group_id] }))
+            } else {
+                setGroupData(results);
+            }
         }
     };
 
@@ -86,41 +85,35 @@ const TestGroups = () => {
         navigate('/');
     }
 
-    const handleGroupNameClick = (test_group, date) => {
-        setTestGroup(test_group);
-        const group = groupData.find(group => group.Name === test_group);
-        const group_id = group ? group.id : null;
-        setTestGroupId(group_id);
-        navigate(`/testgroup`)
-    };
+    const handleRunClick = (groupId) => {
+        navigate(`/release/${groupId}`)
+    }
 
     const onCreateGroup = () => {
-        setShowInputs(true);
-        setSubmitMsg("Add Group")
         const newFormData = {
-            id: crypto.randomUUID(),
             Name: '',
             Machine: '',
             Port: '',
             Scheduled: '',
             TLS: false
         };        
-        setGroupData(prevGroupData => ({
-            ...prevGroupData,
-            [newFormData.id]: environments.DEV ? { DEV: { ...newFormData } } : {}
-        }));
+        setNewGroupData(environments.DEV ? { DEV: { ...newFormData } } : {})
     };
 
     const onDateChange = (newDate) => {
         const formattedDate = newDate ? newDate.format('DD/MM/YYYY') : '';
         setGlobalDt(formattedDate);
-        fetchGroupDetailsAndResults(formattedDate);
+        fetchGroupDetailsAndResults(formattedDate, null);
     };
+
+    const showPopupWithMessage = (message, success) => {
+        setNotification(message)
+        setNotificationSuccess(success)
+    }
 
     const handleTestConnect = async (environment, testData) => {
         setLoading(true);
-        setNotification("this will not display, it just to show the loading icon")
-        setNotificationSuccess(true)
+        showPopupWithMessage("this will not display, it just to show the loading icon", true)
         try {
             const data = await fetchWithErrorHandling(
                 `${environments[environment].url}test_kdb_connection/`,
@@ -139,30 +132,77 @@ const TestGroups = () => {
                 showError
             )
             if (data.message === "success") {
-                setNotification("Connection Successful")
-                setNotificationSuccess(true)
+                showPopupWithMessage("Connection Successful", true)
             } else {
-                setNotification("Connection Failed => " + data.details)
-                setNotificationSuccess(false)
+                showPopupWithMessage("Connection Failed => " + data.details, false)
                 // in future - might use error message in data.details - will require better handling on backend - right now details is a stack trace
             }
         } catch (error) {
             console.error('Error:', error);
-            setNotification("Connection Failed => " + String(error))
-            setNotificationSuccess(false)
+            showPopupWithMessage("Connection Failed => " + String(error), false)
         }
         setLoading(false);
     };
 
-    const updateGroupEnv = async (groupId, env, data, groupName) => {
+    const handleDeleteClick = (groupId) => {
+        setGroupToDelete(groupId);
+        setShowConfirmation(true);
+    }
+
+    const confirmDelete = async () => {
+        setGroupData(prevState => {
+            const newState = { ...prevState };
+            delete newState[groupToDelete];
+            return newState;
+        });
+        for (const env in groupData[groupToDelete]) {
+            if (groupData[groupToDelete].hasOwnProperty(env)) {
+                try {
+                    await fetchWithErrorHandling(
+                        `${environments[env].url}delete_test_group/${groupToDelete}/`,
+                        {
+                            method: 'DELETE',
+                        },
+                        'delete_test_group',
+                        showError
+                    );
+                } catch (error) {
+                    console.error(`Error deleting test group for ${env}:`, error);
+                }
+            }
+        }
+        setShowConfirmation(false);
+        setGroupToDelete(null);
+    }
+    
+    const cancelDelete = () => {
+        setShowConfirmation(false);
+        setGroupToDelete(null);
+    }
+
+    const updateGroupEnv = async (groupId, env, data, groupName, newGroup) => {
         if (!groupName) {
-            setNotification("Group name is required.")
-            setNotificationSuccess(false)
+            showPopupWithMessage("Group name is required.", false)
             return
+        }
+        if (!data.Machine) {
+            showPopupWithMessage("Machine is required.", false)
+            return
+        }
+        if (!data.Port) {
+            showPopupWithMessage("Port is required.", false)
+            return
+        }
+        if (!data.Scheduled) {
+            showPopupWithMessage("Schedule is required.", false)
+            return
+        }
+        if (newGroup) {
+            groupId = crypto.randomUUID()
         }
 
         try {
-            const result = await fetchWithErrorHandling(
+            await fetchWithErrorHandling(
                 `${environments[env].url}upsert_test_group/${groupId}/`,
                 {
                     method: 'POST',
@@ -181,8 +221,25 @@ const TestGroups = () => {
                 'upsert_test_group',
                 showError
             )
-            // update groupData also
-            setGroupData(prevState => ({ ...prevState, [groupId]: { ...prevState[groupId], [env]: data } }))
+            
+            // Manually update the groupData
+            setGroupData(prevState => ({
+                ...prevState,
+                [groupId]: {
+                    [env]: {
+                        id: groupId,
+                        Name: groupName,
+                        Machine: data.Machine,
+                        Port: data.Port,
+                        Scheduled: data.Scheduled,
+                        TLS: data.TLS
+                    }
+                }
+            }))
+
+            if (newGroup) {
+                setNewGroupData({})
+            }
         } catch (error) {
             console.error('Error:', error);
         }
@@ -195,7 +252,7 @@ const TestGroups = () => {
     return (
         <>
             <Header title={"Home Page"} onClick={goToHomePage} />
-            <div style = {{marginLeft: "7%"}}>
+            <div style = {{marginLeft: "7%", marginBottom: "100px"}}>
                 <div className="dateSelector">
                     <DatePicker
                         value={dayjs(globalDt, 'DD/MM/YYYY')}
@@ -211,12 +268,26 @@ const TestGroups = () => {
                         environments={environments}
                         group_data={groupData[groupId]}
                         handleTestConnect={handleTestConnect}
-                        updateGroupEnv={(env, data, groupName) => updateGroupEnv(groupId, env, data, groupName)}
+                        updateGroupEnv={(env, data, groupName) => updateGroupEnv(groupId, env, data, groupName, false)}
+                        goToTestGroupDetails={() => navigate(`/testgroup/${groupId}`)}
+                        handleDeleteClick={() => handleDeleteClick(groupId)}
+                        handleRunClick={() => handleRunClick(groupId)}
                     />
                 ))}
-                <div className="createGroup">
-                    <CustomButton onClick={onCreateGroup}>Create Group</CustomButton>
-                </div>
+                {(newGroupData && Object.keys(newGroupData).length > 0) ? (
+                    <NewTestGroupRow
+                        environments={environments}
+                        group_data={newGroupData}
+                        handleTestConnect={handleTestConnect}
+                        updateGroupEnv={(env, data, groupName) => updateGroupEnv(null, env, data, groupName, true)}
+                        removeNewGroup={() => setNewGroupData({})}
+                        showPopupWithMessage={showPopupWithMessage}
+                    />
+                ) : (
+                    <div className="createGroup">
+                        <CustomButton onClick={onCreateGroup}>Create Group</CustomButton>
+                    </div>
+                )}
             </div>
             {notification && (
                 <NotificationPopup
@@ -226,6 +297,14 @@ const TestGroups = () => {
                     loading={loading}
                 />
                 )}
+            {showConfirmation && (
+                <ConfirmationPopup
+                    message={`Are you sure you want to delete the group?
+                            \nNote that this will also delete all tests in the group`}
+                    onConfirm={confirmDelete}
+                    onCancel={cancelDelete}
+                />
+            )}
         </>
     )
 };

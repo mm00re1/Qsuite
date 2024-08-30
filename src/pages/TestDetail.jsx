@@ -19,7 +19,6 @@ import { useNavigation } from '../TestNavigationContext'; // Adjust the path as 
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 import SearchTests from '../components/SearchTests/SearchTests';
 import './AddTest.css'
-import { API_URL } from '../constants'
 import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
 
@@ -31,7 +30,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
   );
 
   const TestDetail = () => {
-    const { testId, date } = useParams();
+    const { groupId, testId, date } = useParams();
     const { env, setEnv, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
 
     const [name, setName] = React.useState('');
@@ -56,11 +55,11 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     
     const fetchTestGroupsAndData = async (date, testId) => {
         try {
-            const testGroupsData = await fetchWithErrorHandling(`${API_URL}test_groups/`, {}, 'test_groups', showError);
+            const testGroupsData = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
             setTestGroups(testGroupsData);
             if (date && testId) {
                 const formattedDate = date.replace(/\//g, '-');
-                const testData = await fetchWithErrorHandling(`${API_URL}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info', showError)
+                const testData = await fetchWithErrorHandling(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info', showError)
                 setTestData(testData);
                 setGroup(testData.group_name);
                 setName(testData.test_name);
@@ -73,7 +72,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
                 if (!testData.free_form) {
                     const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-                    const testCodeData = await fetchWithErrorHandling(`${API_URL}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code', showError)
+                    const testCodeData = await fetchWithErrorHandling(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code', showError)
                     if (testCodeData.success) {
                         setTestCode(testCodeData.results.split('\n'))
                     } else {
@@ -95,7 +94,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     useEffect(() => {
         fetchTestGroupsAndData(date, testId);
         addTestToHistory(testId);
-    }, [testId, date]);
+    }, [testId, date, env]);
 
     const handleTestNameClick = (test_case_id, dt) => {
         addTestToHistory(testId);
@@ -111,7 +110,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     };
 
     const goToGroupDetailPage = () => {
-        navigate("/testgroup");
+        navigate(`/testgroup/${groupId}`);
     }
 
     const nameChange = (event) => {
@@ -130,13 +129,13 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             setLoading(true);
             if (!FreeForm) {
                 fetchPromise = fetchWithErrorHandling(
-                    `${API_URL}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
+                    `${environments[env].url}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
                     {},
                     'execute_q_function',
                     showError
             } else {
                 fetchPromise = fetchWithErrorHandling(
-                    `${API_URL}execute_q_code/`,
+                    `${environments[env].url}execute_q_code/`,
                     {
                         method: 'POST',
                         headers: {
@@ -195,7 +194,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
         
         try {
             const data = await fetchWithErrorHandling(
-                `${API_URL}edit_test_case/`,
+                `${environments[env].url}edit_test_case/`,
                 {
                     method: 'PUT',
                     headers: {
@@ -242,7 +241,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                 <BackButton title={"Previous Test"} onClick={goToPrevTestPage} textColor={'#3E0A66'} fontSize={'16px'} />
               </div>
             )}
-            <div style={{ paddingTop: "20px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControl variant="standard" sx={{ m: 1}} >
                     <Select
                         value={env}
@@ -269,13 +268,13 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                             },
                           }}
                         >
-                        {environments.map((env, index) => (
+                        {Object.keys(environments).map((env) => (
                             <MenuItem
-                                key={index}
-                                value={env.environment} // Use option.name for the value
+                                key={env}
+                                value={env}
                                 style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
                             >
-                                {env.environment}
+                                {env}
                             </MenuItem>
                         ))}
                     </Select>

@@ -1,6 +1,3 @@
-//export const API_URL = 'http://54.177.180.32/api/'
-export const API_URL = 'http://172.18.1.113:8000/'
-
 export const endpoint_errors = {
     "test_groups": "Could not retrieve test group names",
     "execute_q_function": "Error while attempting to execute q function",

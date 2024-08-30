@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Autocomplete, TextField, CircularProgress, Box, Typography } from '@mui/material';
-import debounce from 'lodash.debounce';
-import { API_URL } from '../../constants'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { Autocomplete, TextField, CircularProgress, Box, Typography } from '@mui/material'
+import debounce from 'lodash.debounce'
+import { useNavigation } from '../../TestNavigationContext'
 import { fetchWithErrorHandling } from '../../utils/api'
 import { useError } from '../../ErrorContext.jsx'
 
 const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChange, message, groupMissing, setMessage, setTestStatus }) => {
+    const { env, environments } = useNavigation()
     const [testNames, setTestNames] = useState([]);
     const [testInputValue, setTestInputValue] = useState('');
     const [loading, setLoading] = useState(false);
@@ -21,7 +22,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
             if (!groupMissing) {
                 const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
                 const data = await fetchWithErrorHandling(
-                    `${API_URL}all_functional_tests/?group_id=${groupId}&limit=10`,
+                    `${environments[env].url}all_functional_tests/?group_id=${groupId}&limit=10`,
                     {},
                     'all_functional_tests',
                     showError
@@ -47,7 +48,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
         const groupId = (testGroupsRef.current.find(testGroup => testGroup.name === groupRef.current)).id;
         try {
             const data = await fetchWithErrorHandling(
-                `${API_URL}search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`,
+                `${environments[env].url}search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`,
                 {},
                 'search_functional_tests',
                 showError

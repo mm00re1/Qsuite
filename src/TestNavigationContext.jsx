@@ -9,10 +9,8 @@ export const NavigationProvider = ({ children }) => {
         'PROD': { url: 'http://localhost:8002/', isEditing: false }
         })
     const [testHistory, setTestHistory] = useState([])
-    const [testGroup, setTestGroup] = useState('')
-    const [testGroupId, setTestGroupId] = useState(null)
     const [globalDt, setGlobalDt] = useState('')
-    const envs = ["DEV", "PROD"]  // will be retrieved from wordpress database in future
+    const [groupData, setGroupData] = useState({});
 
     const addTestToHistory = (testId) => {
         if (testHistory.length === 0) {
@@ -33,16 +31,14 @@ export const NavigationProvider = ({ children }) => {
     return (
         <NavigationContext.Provider
             value={{
-                testGroup,
-                setTestGroup,
-                testGroupId,
-                setTestGroupId,
                 globalDt,
                 setGlobalDt,
                 env,
                 setEnv,
                 environments,
                 setEnvironments,
+                groupData,
+                setGroupData,
                 testHistory,
                 addTestToHistory,
                 removeLastTestFromHistory,

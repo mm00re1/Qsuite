@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { useNavigate } from 'react-router-dom';
-import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
+import { useNavigation } from '../TestNavigationContext';
 import CodeTerminal from '../components/CodeTerminal/CodeTerminal';
 import CodeDisplay from '../components/CodeDisplay/CodeDisplay';
 import CustomButton from '../components/CustomButton/CustomButton';
@@ -212,7 +212,7 @@ const AddTestPage = () => {
     return (
         <>
             <Header title={"All Test Runs"} onClick={goToHomePage}/>
-            <div style={{ paddingTop: "20px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControl variant="standard" sx={{ m: 1}} >
                     <Select
                         value={env}

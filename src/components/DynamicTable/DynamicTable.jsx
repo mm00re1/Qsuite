@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, ThemeProvider, createTheme, IconButton } from '@mui/material';
 import EditIcon from '../../assets/edit_icon.svg'; // Import your SVG file
 import GreenTick from '../../assets/green_tick.svg'; // Import your SVG file
 import RedX from '../../assets/red_x.svg'; // Import your SVG file
+import HoverPopup from '../HoverPopup'
 
 const tableTheme = createTheme({
     components: {
@@ -19,6 +20,7 @@ const tableTheme = createTheme({
 });
 
 const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButtonClick, onTestNameClick, onGroupNameClick, currentDate }) => {
+    const [hoveredTestName, setHoveredTestName] = useState(null);
     const textColor = 'black';
     
     const handleEditButtonClick = (row) => {
@@ -37,6 +39,15 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
         if (onGroupNameClick) {
             onGroupNameClick(group_name, date);
         }
+    };
+
+    const handleTestNameMouseEnter = (event, testName) => {
+        const { clientX, clientY } = event;
+        setHoveredTestName({ testName, x: clientX, y: clientY });
+    };
+
+    const handleTestNameMouseLeave = () => {
+        setHoveredTestName(null);
     };
 
     const parseValue = (val) => {
@@ -101,14 +112,20 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
                                             ) : column === 'Test Name' ? (
                                                 <span
                                                     onClick={() => handleTestNameClick(row['test_case_id'], currentDate.replace(/\//g, '-'))}
+                                                    onMouseEnter={(e) => handleTestNameMouseEnter(e, row[column])}
+                                                    onMouseLeave={handleTestNameMouseLeave}
                                                     style={{
                                                         cursor: 'pointer',
                                                         color: row["Status"] === true ? '#60E42D' : row["Status"] === false ? '#FF1818' : 'black',
                                                         textDecoration: 'underline',
-                                                        fontWeight: 'bold'
+                                                        fontWeight: 'bold',
+                                                        position: 'relative'
                                                     }}
                                                 >
                                                     {row[column]}
+                                                    {hoveredTestName && hoveredTestName.testName === row[column] && (
+                                                        <HoverPopup content={row[column]} />
+                                                    )}
                                                 </span>
                                             ) : column === 'Status' ? (
                                                 row["Status"] === true ? (

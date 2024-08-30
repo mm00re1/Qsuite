@@ -4,7 +4,6 @@ import Checkbox from '@mui/material/Checkbox'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Typography from '@mui/material/Typography'
 import CustomButton from '../CustomButton/CustomButton'
-import IconButton from '@mui/material/IconButton'
 import EditIcon from '@mui/icons-material/Edit'
 import SaveIcon from '@mui/icons-material/Save'
 import UndoIcon from '@mui/icons-material/Undo'
@@ -27,6 +26,7 @@ const GroupForm = ({
   onTestConnect,
   updateGroupEnv,
   editing,
+  editButton = true,
   onUndo,
 }) => {
 
@@ -133,22 +133,33 @@ const GroupForm = ({
                             color="primary"
                             disabled={!editing}
                         />}
-                    label={<Typography style={{ fontFamily: 'Cascadia Code' }}>TLS</Typography>}
+                    label={
+                        <Typography 
+                            style={{ 
+                                fontFamily: 'Cascadia Code',
+                                color: editing ? 'inherit' : grey[400]
+                            }}
+                        >
+                            TLS
+                        </Typography>
+                    }
                 />
                 <div className="button-stack">
                     <CustomButton disabled={!editing} height={0.7} width={0.9} onClick={onTestConnect}>Test Connection</CustomButton>
                 </div>
             </div>
-            {editing ? (
-                <UndoIcon
-                    onClick={onUndo}
-                    style={{ cursor: 'pointer', color: 'black' }}
-                />
-            ) : (
-                <EditIcon
-                    onClick={onEdit}
-                    style={{ cursor: 'pointer', width: '24px', height: '24px' }}
-                />
+            {editButton && (
+                editing ? (
+                    <UndoIcon
+                        onClick={onUndo}
+                        style={{ cursor: 'pointer', color: 'black' }}
+                    />
+                ) : (
+                    <EditIcon
+                        onClick={onEdit}
+                        style={{ cursor: 'pointer', width: '24px', height: '24px' }}
+                    />
+                )
             )}
             <SaveIcon
                 onClick={editing ? updateGroupEnv : undefined}

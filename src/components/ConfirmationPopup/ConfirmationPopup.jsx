@@ -23,8 +23,8 @@ const ConfirmationPopup = ({ message, onConfirm, onCancel }) => {
       }}>
         <p style={{ whiteSpace: 'pre-line' }}>{message}</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
-          <CustomButton onClick={onConfirm}>Confirm</CustomButton>
           <CustomButton onClick={onCancel}>Cancel</CustomButton>
+          <CustomButton onClick={onConfirm}>Confirm</CustomButton>
         </div>
       </div>
     </div>

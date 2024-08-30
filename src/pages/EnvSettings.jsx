@@ -4,8 +4,8 @@ import EnvironmentRow from '../components/EnvironmentRow/EnvironmentRow'
 import CustomButton from '../components/CustomButton/CustomButton'
 import Header from '../components/Header/Header'
 import { useNavigate } from 'react-router-dom'
-import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
-import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup' // Assuming this component exists
+import { useNavigation } from '../TestNavigationContext'
+import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
 
 
 const EnvSettings = () => {
@@ -64,7 +64,7 @@ const EnvSettings = () => {
   return (
     <>
       <Header title={"Home Page"} onClick={goToHomePage} />
-      <div style={{ marginTop: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px'}}>
+      <div style={{ marginTop: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px'}}>
         {['DEV', 'TEST', 'PROD'].map((env, index) => (
           <React.Fragment key={env}>
             {environments[env] ? (
