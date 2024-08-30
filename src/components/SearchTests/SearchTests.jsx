@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Autocomplete, TextField, CircularProgress, Chip, Box } from '@mui/material';
-import debounce from 'lodash.debounce';
-import { API_URL } from '../../constants'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { Autocomplete, TextField, CircularProgress, Chip, Box } from '@mui/material'
+import debounce from 'lodash.debounce'
+import { useNavigation } from '../../TestNavigationContext'
 import { fetchWithErrorHandling } from '../../utils/api'
-import { useError } from '../../ErrorContext.jsx';
+import { useError } from '../../ErrorContext.jsx'
 
 const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, renderChips, message, group_id }) => {
+    const { env, environments } = useNavigation()
     const [testNames, setTestNames] = useState([]);
     const [testInputValue, setTestInputValue] = useState('');
     const [loading, setLoading] = useState(false);
@@ -21,13 +22,13 @@ const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, re
         try {
             const data = groupIdRef.current
             ? await fetchWithErrorHandling(
-                `${API_URL}search_tests/?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`,
+                `${environments[env].url}search_tests/?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`,
                 {},
                 'search_tests',
                 showError
               )
             : await fetchWithErrorHandling(
-                `${API_URL}search_tests/?query=${inputValue}&limit=10`,
+                `${environments[env].url}search_tests/?query=${inputValue}&limit=10`,
                 {},
                 'search_tests',
                 showError

@@ -25,7 +25,7 @@ const TestRunChart = ({ testResults }) => {
                 categories: categories,
                 labels: {
                     style: {
-                        colors: 'white',
+                        //colors: 'white',
                         fontSize: '12px'
                     }
                 }
@@ -35,7 +35,7 @@ const TestRunChart = ({ testResults }) => {
                 title: {
                     text: 'Number of Tests',
                     style: {
-                        color: 'white',
+                        //color: 'white',
                         fontSize: '16px',
                         fontWeight: 'normal',
                         fontFamily: 'Cascadia Code',
@@ -44,7 +44,7 @@ const TestRunChart = ({ testResults }) => {
                 labels: {
                     style: {
                         fontSize: '12px',
-                        colors: 'white',
+                        //colors: 'white',
                     }
                 }
             },
@@ -66,8 +66,14 @@ const TestRunChart = ({ testResults }) => {
     };
 
     return (
-        <div style={{ width: '100%', marginLeft: '18%' }}>
-
+        <div style={{
+            width: '100%',
+            marginLeft: '18%',
+            backgroundColor: 'white', // Dark background color
+            //boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.3)', // Box shadow
+            padding: '20px', // Add some padding
+            borderRadius: '0px' // Rounded corners
+        }}>
             <Chart
                 options={chartData.options}
                 series={chartData.series}

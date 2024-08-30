@@ -5,43 +5,31 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Header from '../components/Header/Header';
-import { DatePicker } from '@mui/x-date-pickers';
-import dayjs, { Dayjs } from 'dayjs';
 import DynamicTable from '../components/DynamicTable/DynamicTable';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
-import { PieChart } from '@mui/x-charts/PieChart';
 import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
-import TestGroupDetailChart from '../components/Charts/TestGroupDetailChart';
 import './TestGroupDetail.css';
 import SearchTests from '../components/SearchTests/SearchTests';
-import BackButton from '../components/BackButton/BackButton';
 import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
 import { useParams } from 'react-router-dom';
 
-const TestGroupDetail = () => {
-    const { globalDt, setGlobalDt, env, setEnv, environments, deleteTestHistory } = useNavigation();
+const Release = () => {
+    const { globalDt, env, setEnv, environments, deleteTestHistory } = useNavigation();
     const navigate = useNavigate();
     const { groupId } = useParams();
     const [testGroupId, setTestGroupId] = useState(groupId);
     const [testGroup, setTestGroup] = useState('');
     const [sortOption, setSortOption] = useState('');
     const [testGroups, setTestGroups] = useState([]);
-    const [startDate, setStartDate] = useState(null);
-    const [latestDate, setLatestDate] = useState(null);
-    const [missingDates, setMissingDates] = useState(new Set());
     const [tableData, setTableData] = useState([]);
     const [columnList, setColumnList] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPassed, setTotalPassed] = useState(0);
-    const [totalFailed, setTotalFailed] = useState(0);
-    const [graphData, setGraphData] = useState([]);
     const [selectedTests, setSelectedTests] = useState([]);
     const { showError } = useError()
-    const sortOptions = ["Failed", "Passed", "Time Taken"];
 
     useEffect(() => {
         deleteTestHistory()
@@ -61,73 +49,10 @@ const TestGroupDetail = () => {
     }, [env]);
 
     useEffect(() => {
-        async function fetchUniqueDates() {
-            try {
-                const data = await fetchWithErrorHandling(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates', showError);
-                setStartDate(dayjs(data.start_date));
-                setLatestDate(dayjs(data.latest_date));
-                const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
-                setMissingDates(missingDatesSet);
-                if (!globalDt && data.latest_date) {
-                    setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
-                } else if (!globalDt && !data.latest_date) {
-                    setGlobalDt(dayjs().format('DD/MM/YYYY'));
-                }
-            } catch (error) {
-                console.error('Error fetching dates:', error);
-            }
-        }
-        fetchUniqueDates()
-    }, [globalDt,env]);
-
-    useEffect(() => {
-        if (globalDt) {
-            fetchGroupStats(globalDt, testGroupId);
-        }
-    }, [testGroups,env]);
-
-    useEffect(() => {
-        if (globalDt) {
-            fetchExecutionTimes(globalDt, testGroupId);
-        }
-    }, [testGroups,env]);
-
-    useEffect(() => {
         if (globalDt) {
             fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage, true);
         }
     }, [testGroups,env]);
-
-    const fetchGroupStats = async (selectedDate, group_id) => {
-        const formattedDate = selectedDate.replace(/\//g, '-');
-        try {
-            const data = await fetchWithErrorHandling(
-                `${environments[env].url}get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`,
-                {},
-                'get_test_group_stats',
-                showError
-            )
-            setTotalPassed(data.total_passed)
-            setTotalFailed(data.total_failed)
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
-    }
-
-    const fetchExecutionTimes = async (selectedDate, group_id) => {
-        const formattedDate = selectedDate.replace(/\//g, '-');
-        try {
-            const data = await fetchWithErrorHandling(
-                `${environments[env].url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
-                {},
-                'get_test_results_by_day',
-                showError
-            )
-            setGraphData(data.test_data)
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
-    }
 
     const fetchTestRunResults = async (selectedDate, group_id, sortStyle, pageNumber = 1) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
@@ -140,8 +65,12 @@ const TestGroupDetail = () => {
                     'get_test_results_by_day',
                     showError
                 )
-                setTableData(data.test_data)
-                setColumnList(data.columnList)
+                setTableData(data.test_data.map(item => ({
+                    ...item,
+                    'Creation Date': item['Creation Date'] ? item['Creation Date'].split('T')[0] : null,
+                    'Status': null
+                })))
+                setColumnList(["Test Name", "Creation Date"])
                 setTotalPages(data.total_pages)
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -177,29 +106,7 @@ const TestGroupDetail = () => {
         setTestGroupId(group_id);
         setSortOption('');
         setCurrentPage(1);
-        fetchGroupStats(globalDt, group_id);
-        fetchExecutionTimes(globalDt, group_id);
         fetchTestRunResults(globalDt, group_id, '', 1);
-    };
-
-    const onSortChange = (event) => {
-        setSortOption(event.target.value);
-        setCurrentPage(1);
-        fetchTestRunResults(globalDt, testGroupId, event.target.value, 1);
-    };
-
-    const onDateChange = (newDate) => {
-        const formattedDate = newDate ? newDate.format('DD/MM/YYYY') : '';
-        setGlobalDt(formattedDate);
-        setSortOption('');
-        setCurrentPage(1);
-        fetchGroupStats(formattedDate, testGroupId);
-        fetchExecutionTimes(formattedDate, testGroupId);
-        fetchTestRunResults(formattedDate, testGroupId, '', 1);
-    };
-
-    const isMissing = (date) => {
-        return missingDates.has(dayjs(date).format('YYYY-MM-DD'));
     };
     
     const handlePrevPage = () => {
@@ -213,7 +120,6 @@ const TestGroupDetail = () => {
         if (currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
             fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage + 1);
-
         }
     };
 
@@ -239,13 +145,6 @@ const TestGroupDetail = () => {
         const updatedTests = selectedTests.filter(test => test.test_case_id !== testToDelete.test_case_id);
         setSelectedTests(updatedTests);
     };
-
-    const backToAllTests = () => {
-        setSelectedTests([]);
-        setSortOption('');
-        setCurrentPage(1);
-        fetchTestRunResults(globalDt, testGroupId, '', 1);
-    }
 
     return (
         <>
@@ -290,13 +189,6 @@ const TestGroupDetail = () => {
                 </FormControl>
             </div>
             <div className="dateGroupPicker">
-                <DatePicker
-                    value={dayjs(globalDt, 'DD/MM/YYYY')}
-                    onChange={onDateChange}
-                    minDate={startDate}
-                    maxDate={latestDate}
-                    shouldDisableDate={isMissing}
-                />
                 <FormControl variant="filled">
                     <InputLabel style={{ fontFamily: 'Cascadia Code' }}>Group</InputLabel>
                     <Select
@@ -329,78 +221,6 @@ const TestGroupDetail = () => {
                         ))}
                     </Select>
                 </FormControl>
-            </div>
-            <div style={{ display: 'flex', width: '100%', marginTop: '10px' }}>
-                <div
-                    style={{
-                        width: '40%',
-                        minWidth: '560px',
-                        display: 'flex',
-                        justifyContent: 'flex-start',
-                        marginTop: '80px',
-                    }}>
-                    <PieChart
-                        colors={['#60F82A', '#F11414']}
-                        series={[
-                            {
-                            data: [
-                                { id: 0, value: totalPassed, label: 'Passed' },
-                                { id: 1, value: totalFailed, label: 'Failed' },
-                            ],
-                            innerRadius: 70,
-                            outerRadius: 100,
-                            },
-                        ]}
-                        width={300}
-                        height={200}
-                        slotProps={{ legend: { hidden: true } }}
-                    />
-                </div>
-                <div
-                    style={{
-                        width: '60%',
-                        minWidth: '840px',
-                        display: 'flex',
-                        justifyContent: 'center',
-                    }}>
-                    <TestGroupDetailChart data={graphData} />
-                </div>
-            </div>
-            <div className="groupAndDate">
-                {(!selectedTests.length > 0) && (
-                    <FormControl variant="filled">
-                        <InputLabel style={{ fontFamily: 'Cascadia Code' }}>Sort By</InputLabel>
-                        <Select
-                            value={sortOption}
-                            label="Sort By"
-                            onChange={onSortChange}
-                            style={{
-                                backgroundColor: 'white',
-                                borderRadius: 0,
-                                fontFamily: 'Cascadia Code',
-                                boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                                minWidth: '220px'
-                            }}
-                            MenuProps={{
-                                PaperProps: {
-                                    style: {
-                                        backgroundColor: 'white', // Dropdown box color
-                                    }
-                                }
-                            }}
-                        >
-                            {sortOptions.map((option, index) => (
-                                <MenuItem
-                                    key={index}
-                                    value={option}
-                                    style={{ fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center' }}
-                                >
-                                    {option}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                )}
                 <SearchTests
                     selectedTests={selectedTests}
                     handleLinkedTestChange={handleSelectedTestChange}
@@ -410,12 +230,7 @@ const TestGroupDetail = () => {
                     group_id={testGroupId}
                 />
             </div>
-            {(selectedTests.length > 0) && (
-                <div style={{ marginLeft: '5%', marginBottom: '20px', marginTop: '1px' }}>
-                    <BackButton title={"All Tests"} onClick={backToAllTests} textColor={'#3E0A66'} fontSize={'16px'} />
-                </div>
-            )}
-            <div className="tableContainer">
+            <div style={{ marginLeft: "5%", marginTop: "80px" }}>
                 <DynamicTable
                     columnList={columnList}
                     data={tableData}
@@ -437,4 +252,4 @@ const TestGroupDetail = () => {
     );
 };
 
-export default TestGroupDetail;
+export default Release;
