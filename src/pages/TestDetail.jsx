@@ -21,13 +21,7 @@ import SearchTests from '../components/SearchTests/SearchTests';
 import './AddTest.css'
 import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
-
-const ActionButtons = ({ onExecute, onAddTest }) => (
-    <div className="actionButtons">
-      <CustomButton onClick={onExecute}>Execute</CustomButton>
-      <CustomButton onClick={onAddTest}>Push Changes</CustomButton>
-    </div>
-  );
+//import { useTestData } from '../contexts/TestDataContext'
 
   const TestDetail = () => {
     const { groupId, testId, date } = useParams();
@@ -50,38 +44,42 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     const [functionalTest, setFunctionalTest] = useState('');
     const [testCode, setTestCode] = useState(['']);
     const [loading, setLoading] = useState(false);
+    const [isBaseEnv, setIsBaseEnv] = useState(false);
     const navigate = useNavigate();
     const { showError } = useError()
     
+    const fetchTestData = async (date, testId, testGroupsData) => {
+        const formattedDate = date.replace(/\//g, '-');
+        const testData = await fetchWithErrorHandling(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info', showError)
+        setTestData(testData);
+        setGroup(testData.group_name);
+        setName(testData.test_name);
+        setFreeForm(testData.free_form);
+        setLinkedTests(testData.dependent_tests);
+        setLines(testData.test_code.split('\n\n'));
+        setFunctionalTest(testData.free_form ? '' : testData.test_code);
+        setColumnList(testData.dependent_tests_columns);
+        setTableData(testData.dependent_tests);
+
+        if (!testData.free_form) {
+            const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
+            const testCodeData = await fetchWithErrorHandling(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code', showError)
+            if (testCodeData.success) {
+                setTestCode(testCodeData.results.split('\n'))
+            } else {
+                setTestStatus(false)
+                setMessage(testCodeData.message)
+            }
+        }
+    };
+
     const fetchTestGroupsAndData = async (date, testId) => {
         try {
             const testGroupsData = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
             setTestGroups(testGroupsData);
             if (date && testId) {
-                const formattedDate = date.replace(/\//g, '-');
-                const testData = await fetchWithErrorHandling(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info', showError)
-                setTestData(testData);
-                setGroup(testData.group_name);
-                setName(testData.test_name);
-                setFreeForm(testData.free_form);
-                setLinkedTests(testData.dependent_tests);
-                setLines(testData.test_code.split('\n\n'));
-                setFunctionalTest(testData.free_form ? '' : testData.test_code);
-                setColumnList(testData.dependent_tests_columns);
-                setTableData(testData.dependent_tests);
-
-                if (!testData.free_form) {
-                    const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-                    const testCodeData = await fetchWithErrorHandling(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code', showError)
-                    if (testCodeData.success) {
-                        setTestCode(testCodeData.results.split('\n'))
-                    } else {
-                        setTestStatus(false)
-                        setMessage(testCodeData.message)
-                    }
-                }
+                await fetchTestData(date, testId, testGroupsData);
             }
-
         } catch (error) {
             console.error('Error fetching test data:', error);
         }
@@ -92,6 +90,11 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
     };
     
     useEffect(() => {
+        // order environments in the order ['DEV', 'TEST', 'PROD'] and then set isBaseEnv to true if the current env is the first one
+        const envOrder = ['DEV', 'TEST', 'PROD'];
+        const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
+        const isBaseEnv = orderedEnvs[0] === env;
+        setIsBaseEnv(isBaseEnv);
         fetchTestGroupsAndData(date, testId);
         addTestToHistory(testId);
     }, [testId, date, env]);
@@ -189,20 +192,21 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
             test_name: name,
             id: testData.id,
             test_code: FreeForm ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
-            dependencies: Object.values(linkedTests).map(test => test.test_case_id)
+            dependencies: Object.values(linkedTests).map(test => test.test_case_id),
+            free_form: FreeForm
         };
         
         try {
             const data = await fetchWithErrorHandling(
-                `${environments[env].url}edit_test_case/`,
+                `${environments[env].url}upsert_test_case/`,
                 {
-                    method: 'PUT',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(editedTestData),
                 },
-                'edit_test_case', // Endpoint identifier for error handling
+                'upsert_test_case', // Endpoint identifier for error handling
                 showError // Pass the error handling function
             );
     
@@ -235,7 +239,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
 
     return (
         <>
-            <Header title={"All Test Runs"} onClick={goToGroupDetailPage}/>
+            <Header/>
             {(testHistory.length > 1) && (
                 <div className="prev-test">
                 <BackButton title={"Previous Test"} onClick={goToPrevTestPage} textColor={'#3E0A66'} fontSize={'16px'} />
@@ -310,6 +314,7 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     value={group}
                     label="Group"
                     onChange={groupChange}
+                    disabled
                     style={{
                         backgroundColor: 'white',
                         borderRadius: 0,
@@ -452,7 +457,10 @@ const ActionButtons = ({ onExecute, onAddTest }) => (
                     {JSON.stringify(response, null, 2)}
                 </div>
             )}
-            <ActionButtons onExecute={executeCode} onAddTest={editTest}/>
+            <div className="actionButtons">
+                <CustomButton onClick={executeCode}>Execute</CustomButton>
+                <CustomButton disabled={!isBaseEnv} onClick={editTest}>Push Changes</CustomButton>
+            </div>
         </>
     )
 };

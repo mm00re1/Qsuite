@@ -52,10 +52,7 @@ const TestRunChart = ({ testResults }) => {
                 show: false // Removes the horizontal grid lines
             },
             legend: {
-                labels: {
-                    useSeriesColors: false,
-                    fontFamily: 'Cascadia Code'
-                }
+                show: false // This line hides the legend
             },
             plotOptions: {
                 bar: {

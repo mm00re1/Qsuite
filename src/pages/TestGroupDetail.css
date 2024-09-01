@@ -27,3 +27,7 @@
 .MuiFormControl-root.MuiTextField-root.css-z3c6am-MuiFormControl-root-MuiTextField-root {
   width: 210px;
 }
+
+.tableContainer {
+  margin-left: 5%;
+}

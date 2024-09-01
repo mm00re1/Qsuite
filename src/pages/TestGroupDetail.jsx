@@ -6,7 +6,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Header from '../components/Header/Header';
 import { DatePicker } from '@mui/x-date-pickers';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import DynamicTable from '../components/DynamicTable/DynamicTable';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
@@ -249,7 +249,7 @@ const TestGroupDetail = () => {
 
     return (
         <>
-            <Header title={"All Test Groups"} onClick={goToGroupsPage} />
+            <Header/>
             <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControl variant="standard" sx={{ m: 1}} >
                     <Select

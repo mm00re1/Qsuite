@@ -50,7 +50,8 @@ const KdbQueryStatus = ({ queryStatus, loading, message }) => {
                             }}
                     >
                         <GreenCircle style={{ width: '33px', height: '33px' }} />
-                        <span style={{ marginLeft: '10px' }}>{message}</span>
+                        <p style={{ marginLeft: '10px', whiteSpace: 'pre-line' }}>{message}</p>
+                        {/* <span style={{ marginLeft: '10px' }}>{message}</span> */}
                     </div>
                 ) : (
                     <div
@@ -66,7 +67,7 @@ const KdbQueryStatus = ({ queryStatus, loading, message }) => {
                             boxShadow: '0px 24px 36px rgba(0, 0, 0, 0.2)',
                             }}
                     >   <RedCircle style={{ width: '33px', height: '33px' }} />
-                        <span style={{ marginLeft: '10px' }}>{message}</span>
+                        <p style={{ marginLeft: '10px', whiteSpace: 'pre-line' }}>{message}</p>
                     </div>
                 )}
                 </div>
