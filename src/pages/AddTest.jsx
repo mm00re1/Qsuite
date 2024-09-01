@@ -131,6 +131,7 @@ const AddTestPage = () => {
         }
     
         const testData = {
+            id: crypto.randomUUID(),
             group_id: selectedGroup.id,
             test_name: name,
             test_code: FreeForm ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
@@ -140,7 +141,7 @@ const AddTestPage = () => {
     
         try {
             const data = await fetchWithErrorHandling(
-                `${environments[env].url}add_test_case/`,
+                `${environments[env].url}upsert_test_case/`,
                 {
                     method: 'POST',
                     headers: {
@@ -148,7 +149,7 @@ const AddTestPage = () => {
                     },
                     body: JSON.stringify(testData),
                 },
-                'add_test_case', // Endpoint identifier for error handling
+                'upsert_test_case', // Endpoint identifier for error handling
                 showError // Pass the error handling function
             );
     
@@ -211,7 +212,7 @@ const AddTestPage = () => {
 
     return (
         <>
-            <Header title={"All Test Runs"} onClick={goToHomePage}/>
+            <Header/>
             <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControl variant="standard" sx={{ m: 1}} >
                     <Select

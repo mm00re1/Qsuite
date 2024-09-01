@@ -251,7 +251,7 @@ const TestGroups = () => {
     
     return (
         <>
-            <Header title={"Home Page"} onClick={goToHomePage} />
+            <Header/>
             <div style = {{marginLeft: "7%", marginBottom: "100px"}}>
                 <div className="dateSelector">
                     <DatePicker

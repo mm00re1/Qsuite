@@ -63,7 +63,7 @@ const EnvSettings = () => {
 
   return (
     <>
-      <Header title={"Home Page"} onClick={goToHomePage} />
+      <Header/>
       <div style={{ marginTop: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px'}}>
         {['DEV', 'TEST', 'PROD'].map((env, index) => (
           <React.Fragment key={env}>

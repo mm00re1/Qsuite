@@ -89,7 +89,7 @@ const HomePage = () => {
 
     return (
         <div>
-            <Header title={"disabled"} onClick={() => {}} />
+            <Header/>
             <div className="white-icon-page">
                 <div className="projectSelector">
                     <FormControl variant="filled">

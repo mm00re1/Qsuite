@@ -3,7 +3,8 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 import EditIcon from '../../assets/edit_icon.svg'; // Import your SVG file
 import GreenTick from '../../assets/green_tick.svg'; // Import your SVG file
 import RedX from '../../assets/red_x.svg'; // Import your SVG file
-import HoverPopup from '../HoverPopup'
+import Checkbox from '@mui/material/Checkbox';
+//import HoverPopup from '../HoverPopup'
 
 const tableTheme = createTheme({
     components: {
@@ -19,13 +20,14 @@ const tableTheme = createTheme({
     }
 });
 
-const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButtonClick, onTestNameClick, onGroupNameClick, currentDate }) => {
-    const [hoveredTestName, setHoveredTestName] = useState(null);
+const DynamicTable = ({ data = [], columnList = [], showCheckbox, onCheckboxChange, onTestNameClick, onGroupNameClick, currentDate }) => {
+    //const [hoveredTestName, setHoveredTestName] = useState(null);
+    const [selectedRows, setSelectedRows] = useState([]);
     const textColor = 'black';
     
-    const handleEditButtonClick = (row) => {
-        if (onEditButtonClick) {
-            onEditButtonClick(row);
+    const handleCheckboxChange = (id) => {
+        if (onCheckboxChange) {
+            onCheckboxChange(id);
         }
     };
 
@@ -41,14 +43,14 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
         }
     };
 
-    const handleTestNameMouseEnter = (event, testName) => {
+    /*const handleTestNameMouseEnter = (event, testName) => {
         const { clientX, clientY } = event;
         setHoveredTestName({ testName, x: clientX, y: clientY });
     };
 
     const handleTestNameMouseLeave = () => {
         setHoveredTestName(null);
-    };
+    };*/
 
     const parseValue = (val) => {
         if (typeof val === "number") {
@@ -76,8 +78,8 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
 
     // Calculate the total width of the table
     const totalWidth = useMemo(() => {
-        return columnList.reduce((sum, column) => sum + columnWidths[column], 0) + (showCircleButton ? 50 : 0) + 200; // Add extra space for padding and other elements
-    }, [columnWidths, columnList, showCircleButton]);
+        return columnList.reduce((sum, column) => sum + columnWidths[column], 0) + (showCheckbox ? 50 : 0) + 200; // Add extra space for padding and other elements
+    }, [columnWidths, columnList, showCheckbox]);
 
     return (
         <ThemeProvider theme={tableTheme}>
@@ -93,7 +95,7 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
                                         {column}
                                     </TableCell>
                                 ))}
-                                {showCircleButton && <TableCell style={{ width: '50px' }} />}
+                                {showCheckbox && <TableCell style={{ width: '50px' }} />}
                                 {/* Empty header for the button */}
                             </TableRow>
                         </TableHead>
@@ -112,8 +114,8 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
                                             ) : column === 'Test Name' ? (
                                                 <span
                                                     onClick={() => handleTestNameClick(row['test_case_id'], currentDate.replace(/\//g, '-'))}
-                                                    onMouseEnter={(e) => handleTestNameMouseEnter(e, row[column])}
-                                                    onMouseLeave={handleTestNameMouseLeave}
+                                                    //onMouseEnter={(e) => handleTestNameMouseEnter(e, row[column])}
+                                                    //onMouseLeave={handleTestNameMouseLeave}
                                                     style={{
                                                         cursor: 'pointer',
                                                         color: row["Status"] === true ? '#60E42D' : row["Status"] === false ? '#FF1818' : 'black',
@@ -123,9 +125,10 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
                                                     }}
                                                 >
                                                     {row[column]}
-                                                    {hoveredTestName && hoveredTestName.testName === row[column] && (
-                                                        <HoverPopup content={row[column]} />
-                                                    )}
+                                                    {//hoveredTestName && hoveredTestName.testName === row[column] && (
+                                                        //<HoverPopup content={row[column]} />
+                                                    //)
+                                                    }
                                                 </span>
                                             ) : column === 'Status' ? (
                                                 row["Status"] === true ? (
@@ -138,23 +141,16 @@ const DynamicTable = ({ data = [], columnList = [], showCircleButton, onEditButt
                                             )}
                                         </TableCell>
                                     ))}
-                                    {showCircleButton && (
+                                    {showCheckbox && (
                                         <TableCell style={{ width: '50px', padding: '8px 0', textAlign: 'center' }}>
-                                            <IconButton
+                                            <Checkbox
+                                                checked={row.Selected || false}
+                                                onChange={() => handleCheckboxChange(row.test_case_id)}
+                                                color="primary"
                                                 style={{
-                                                    borderRadius: '50%',
-                                                    width: '30px',
-                                                    height: '30px',
                                                     padding: 0,
-                                                    border: 'none',
-                                                    outline: 'none',
-                                                    backgroundColor: 'transparent',
-                                                    marginRight: '20px'
                                                 }}
-                                                onClick={() => handleEditButtonClick(row)}
-                                            >
-                                                <img src={EditIcon} alt="edit icon" style={{ width: '100%', height: '100%' }} />
-                                            </IconButton>
+                                            />
                                         </TableCell>
                                     )}
                                 </TableRow>
