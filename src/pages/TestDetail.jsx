@@ -101,14 +101,14 @@ import { useError } from '../ErrorContext.jsx'
 
     const handleTestNameClick = (test_case_id, dt) => {
         addTestToHistory(testId);
-        navigate(`/testdetail/${test_case_id}/${dt}`);
+        navigate(`/testdetail/${groupId}/${test_case_id}/${dt}`)
 
     };
 
     const goToPrevTestPage = () => {
         removeLastTestFromHistory();
         if (testHistory.length > 1) {
-            navigate(`/testdetail/${testHistory[testHistory.length - 2]}/${date.replace(/\//g, '-')}`);
+            navigate(`/testdetail/${groupId}/${testHistory[testHistory.length - 2]}/${date.replace(/\//g, '-')}`);
         }
     };
 
@@ -240,12 +240,14 @@ import { useError } from '../ErrorContext.jsx'
     return (
         <>
             <Header/>
-            {(testHistory.length > 1) && (
-                <div className="prev-test">
+            {(testHistory.length > 1) ? (
+                <div style={{marginTop: "100px", marginLeft: "20px" }}>
                 <BackButton title={"Previous Test"} onClick={goToPrevTestPage} textColor={'#3E0A66'} fontSize={'16px'} />
               </div>
+            ) : (
+                <div style={{ marginTop: "100px" }}/>
             )}
-            <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControl variant="standard" sx={{ m: 1}} >
                     <Select
                         value={env}
