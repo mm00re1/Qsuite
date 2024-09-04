@@ -14,7 +14,8 @@ const TestGroupRow = ({
     updateGroupEnv,
     goToTestGroupDetails,
     handleDeleteClick,
-    handleRunClick
+    handleRunClick,
+    isFinalEnv
     }) => {
     const detailsRef = useRef(null)
     const [groupName, setGroupName] = useState(group_data && group_data.DEV ? group_data.DEV.Name : "" || "")
@@ -131,11 +132,12 @@ const TestGroupRow = ({
                 ) : (
                     <Tooltip title="Release Tests" arrow>
                         <RocketLaunchIcon 
-                            onClick={handleRunClick} 
+                            onClick={isFinalEnv ? undefined : handleRunClick}
                             style={{ 
-                                cursor: 'pointer',
+                                cursor: isFinalEnv ? 'default' : 'pointer',
                                 fontSize: '26px',
-                                color: '#25ACF8'
+                                color: isFinalEnv ? '#A0D8FF' : '#25ACF8',
+                                opacity: isFinalEnv ? 0.6 : 1,
                             }}
                         />
                     </Tooltip>

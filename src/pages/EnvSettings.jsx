@@ -10,11 +10,15 @@ import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup
 
 const EnvSettings = () => {
     // go to wordpress database for this info in future
-  const { environments, setEnvironments } = useNavigation();
+  const { env, setEnv, environments, setEnvironments } = useNavigation();
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [environmentToDelete, setEnvironmentToDelete] = useState(null);
 
+
+  const handleActivate = (environment) => {
+    setEnv(environment)
+  }
 
   const handleEdit = (environment) => {
     setEnvironments((prevEnvironments) => ({
@@ -50,39 +54,37 @@ const EnvSettings = () => {
     }));
   }
 
-  const handleAddEnvironment = (env) => {
+  const handleAddEnvironment = (environment) => {
     setEnvironments((prevEnvironments) => ({
       ...prevEnvironments,
-      [env]: { url: '', isEditing: true }
+      [environment]: { url: '', isEditing: true }
     }));
-  }
-
-  const goToHomePage = () => {
-    navigate('/');
   }
 
   return (
     <>
       <Header/>
       <div style={{ marginTop: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px'}}>
-        {['DEV', 'TEST', 'PROD'].map((env, index) => (
-          <React.Fragment key={env}>
-            {environments[env] ? (
+        {['DEV', 'TEST', 'PROD'].map((environment, index) => (
+          <React.Fragment key={environment}>
+            {environments[environment] ? (
               <EnvironmentRow
-                environment={env}
-                url={environments[env].url}
-                isEditing={environments[env].isEditing}
-                onEdit={() => handleEdit(env)}
-                onSave={(newUrl) => handleSave(env, newUrl)}
-                onDelete={() => handleDelete(env)}
+                environment={environment}
+                url={environments[environment].url}
+                isEditing={environments[environment].isEditing}
+                onEdit={() => handleEdit(environment)}
+                onSave={(newUrl) => handleSave(environment, newUrl)}
+                onDelete={() => handleDelete(environment)}
+                onActivate={() => handleActivate(environment)}
+                isActive={env === environment}
               />
             ) : (
                 <CustomButton 
                   height={0.8} 
                   width={1.2} 
-                  onClick={() => handleAddEnvironment(env)}
+                  onClick={() => handleAddEnvironment(environment)}
                 >
-                  Add {env} Environment
+                  Add {environment} Environment
                 </CustomButton>
             )}
             {index < 2 && (

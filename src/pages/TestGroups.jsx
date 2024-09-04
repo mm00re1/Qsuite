@@ -25,6 +25,7 @@ const TestGroups = () => {
     const [loading, setLoading] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [groupToDelete, setGroupToDelete] = useState(null);
+    const [isFinalEnv, setIsFinalEnv] = useState(false);
     const navigate = useNavigate();
     const { showError } = useError()
 
@@ -45,8 +46,12 @@ const TestGroups = () => {
                 console.error('Error fetching dates:', error);
             }
         }
+        const envOrder = ['DEV', 'TEST', 'PROD'];
+        const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
+        const finalEnv = orderedEnvs[orderedEnvs.length - 1] === env;
+        setIsFinalEnv(finalEnv);
         fetchUniqueDates()
-    }, [globalDt]);
+    }, [globalDt, env]);
 
     useEffect(() => {
         if (globalDt) {
@@ -80,10 +85,6 @@ const TestGroups = () => {
             }
         }
     };
-
-    const goToHomePage = () => {
-        navigate('/');
-    }
 
     const handleRunClick = (groupId) => {
         navigate(`/release/${groupId}`)
@@ -252,6 +253,16 @@ const TestGroups = () => {
     return (
         <>
             <Header/>
+            <div style={{
+                marginTop: "90px",
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
+            </div>
             <div style = {{marginLeft: "7%", marginBottom: "100px"}}>
                 <div className="dateSelector">
                     <DatePicker
@@ -272,6 +283,7 @@ const TestGroups = () => {
                         goToTestGroupDetails={() => navigate(`/testgroup/${groupId}`)}
                         handleDeleteClick={() => handleDeleteClick(groupId)}
                         handleRunClick={() => handleRunClick(groupId)}
+                        isFinalEnv={isFinalEnv}
                     />
                 ))}
                 {(newGroupData && Object.keys(newGroupData).length > 0) ? (

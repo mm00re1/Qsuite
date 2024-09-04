@@ -12,8 +12,9 @@ import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx';
 import Header from '../components/Header/Header'
 
+
 const HomePage = () => {
-    const { env, setEnv, environments } = useNavigation();
+    const { env, environments } = useNavigation();
     const [testGroup, setTestGroup] = React.useState("");
     const [testGroupsFull, setTestGroupsFull] = React.useState([]);
     const [testGroups, setTestGroups] = React.useState([]);
@@ -21,14 +22,14 @@ const HomePage = () => {
     const navigate = useNavigate()
     const { showError } = useError()
 
-    useEffect(() => {
+    /*useEffect(() => {
         // Add the class to body when the component mounts
         document.body.classList.add('purple-page');
             // Clean up by removing the class when the component unmounts
         return () => {
             document.body.classList.remove('purple-page');
         };
-    }, []);
+    }, []);*/
 
     useEffect(() => {
         async function fetchTestGroups() {
@@ -43,7 +44,8 @@ const HomePage = () => {
         }
 
         fetchTestGroups();
-    }, []);
+        setTestGroup("")
+    }, [env]);
 
     useEffect(() => {
         async function fetchTestResults() {
@@ -56,7 +58,7 @@ const HomePage = () => {
         }
 
         fetchTestResults();
-    }, []); 
+    }, [env]); 
 
     const onGroupChange = async (event) => {
         const selectedGroupName = event.target.value;
@@ -88,10 +90,20 @@ const HomePage = () => {
     }
 
     return (
-        <div>
+        <>
             <Header/>
+            <div style={{
+                marginTop: "90px",
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
+            </div>
             <div className="white-icon-page">
-                <div className="projectSelector">
+                <div style={{marginTop: '30px', marginLeft: '10%', display: 'flex', paddingBottom: '20px' }}>
                     <FormControl variant="filled">
                     <InputLabel style={{ fontFamily: 'Cascadia Code' }}> Test Group </InputLabel>
                         <Select
@@ -159,7 +171,7 @@ const HomePage = () => {
                 <CustomButton onClick={viewGroups}>Test Groups</CustomButton>
                 <CustomButton onClick={createTest}>Create Test</CustomButton>
             </div>
-        </div>
+        </>
   )
 }
 

@@ -25,7 +25,7 @@ import { useError } from '../ErrorContext.jsx'
 
   const TestDetail = () => {
     const { groupId, testId, date } = useParams();
-    const { env, setEnv, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
+    const { env, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
 
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
@@ -93,8 +93,8 @@ import { useError } from '../ErrorContext.jsx'
         // order environments in the order ['DEV', 'TEST', 'PROD'] and then set isBaseEnv to true if the current env is the first one
         const envOrder = ['DEV', 'TEST', 'PROD'];
         const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
-        const isBaseEnv = orderedEnvs[0] === env;
-        setIsBaseEnv(isBaseEnv);
+        const baseEnv = orderedEnvs[0] === env;
+        setIsBaseEnv(baseEnv);
         fetchTestGroupsAndData(date, testId);
         addTestToHistory(testId);
     }, [testId, date, env]);
@@ -102,7 +102,6 @@ import { useError } from '../ErrorContext.jsx'
     const handleTestNameClick = (test_case_id, dt) => {
         addTestToHistory(testId);
         navigate(`/testdetail/${groupId}/${test_case_id}/${dt}`)
-
     };
 
     const goToPrevTestPage = () => {
@@ -247,44 +246,14 @@ import { useError } from '../ErrorContext.jsx'
             ) : (
                 <div style={{ marginTop: "100px" }}/>
             )}
-            <div style={{ marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
-                <FormControl variant="standard" sx={{ m: 1}} >
-                    <Select
-                        value={env}
-                        label="env"
-                        onChange={(event) => setEnv(event.target.value)}
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: 0,
-                            fontFamily: 'Cascadia Code',
-                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
-                            minWidth: '80px',
-                        }}
-                        MenuProps={{
-                            PaperProps: {
-                            style: {
-                                backgroundColor: 'white', // Dropdown box color
-                            }
-                            }
-                        }}
-                        inputProps={{
-                            style: {
-                              height: '20px', // Adjust the height here
-                              padding: '2px 5px', // Adjust the padding to control content space
-                            },
-                          }}
-                        >
-                        {Object.keys(environments).map((env) => (
-                            <MenuItem
-                                key={env}
-                                value={env}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
-                            >
-                                {env}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            <div style={{
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
             </div>
             <div className="AddTestFields">
                 <div className="name-input-container">

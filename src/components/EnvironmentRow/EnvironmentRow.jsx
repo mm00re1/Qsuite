@@ -6,7 +6,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import Paper from '@mui/material/Paper'
 import grey from '@mui/material/colors/grey'
 
-const EnvironmentRow = ({ environment, url, isEditing, onEdit, onSave, onDelete }) => {
+const EnvironmentRow = ({ environment, url, isEditing, onEdit, onSave, onDelete, isActive, onActivate }) => {
   const [newUrl, setNewUrl] = useState(url)
   
   const handleSave = () => {
@@ -15,19 +15,45 @@ const EnvironmentRow = ({ environment, url, isEditing, onEdit, onSave, onDelete 
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+      {isActive ? (
+        <div
+          style={{
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            backgroundColor: '#4CAF50',
+            boxShadow: '0 0 10px #4CAF50',
+            marginRight: '16px',
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            backgroundColor: 'white',
+            marginRight: '16px',
+          }}
+        />
+      )}
       <Paper
         elevation={3}
+        component="button"
+        onClick={onActivate}
         style={{
           padding: '16px',
           fontFamily: 'Cascadia Code',
-          backgroundColor: 'white',
+          //backgroundColor: isActive ? '#e0e0e0' : 'white',
           boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
           minWidth: '250px',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           height: '56px', // Match the height of TextField
-          boxSizing: 'border-box' // Ensure padding is included in the height
+          boxSizing: 'border-box', // Ensure padding is included in the height
+          cursor: 'pointer',
+          border: 'none',
         }}
       >
         {environment}

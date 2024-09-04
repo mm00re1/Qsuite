@@ -22,7 +22,7 @@ import { useError } from '../ErrorContext.jsx'
 import { useParams } from 'react-router-dom';
 
 const TestGroupDetail = () => {
-    const { globalDt, setGlobalDt, env, setEnv, environments, deleteTestHistory } = useNavigation();
+    const { globalDt, setGlobalDt, env, environments, deleteTestHistory } = useNavigation();
     const navigate = useNavigate();
     const { groupId } = useParams();
     const [testGroupId, setTestGroupId] = useState(groupId);
@@ -250,44 +250,15 @@ const TestGroupDetail = () => {
     return (
         <>
             <Header/>
-            <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
-                <FormControl variant="standard" sx={{ m: 1}} >
-                    <Select
-                        value={env}
-                        label="env"
-                        onChange={(event) => setEnv(event.target.value)}
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: 0,
-                            fontFamily: 'Cascadia Code',
-                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
-                            minWidth: '80px',
-                        }}
-                        MenuProps={{
-                            PaperProps: {
-                            style: {
-                                backgroundColor: 'white', // Dropdown box color
-                            }
-                            }
-                        }}
-                        inputProps={{
-                            style: {
-                              height: '20px', // Adjust the height here
-                              padding: '2px 5px', // Adjust the padding to control content space
-                            },
-                          }}
-                        >
-                        {Object.keys(environments).map((env) => (
-                            <MenuItem
-                                key={env}
-                                value={env}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
-                            >
-                                {env}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            <div style={{
+                marginTop: "90px",
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
             </div>
             <div className="dateGroupPicker">
                 <DatePicker
