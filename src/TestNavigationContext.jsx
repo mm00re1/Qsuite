@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext } from 'react';
 const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
-    const [env, setEnv] = useState("") // ****************************
+    const [env, setEnv] = useState("")
     const [environments, setEnvironments] = useState({})
     const [testHistory, setTestHistory] = useState([])
     const [globalDt, setGlobalDt] = useState('')
