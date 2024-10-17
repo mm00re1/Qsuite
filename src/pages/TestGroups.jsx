@@ -6,16 +6,17 @@ import { DatePicker } from '@mui/x-date-pickers'
 import dayjs from 'dayjs'
 import { useNavigation } from '../TestNavigationContext'
 import './TestGroups.css'
-import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
 import TestGroupRow from '../components/TestGroupRow/TestGroupRow'
 import NewTestGroupRow from '../components/NewTestGroupRow'
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
 import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
+import { useAuth0 } from "@auth0/auth0-react"
+import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
-// App Component
+
 const TestGroups = () => {
-    const { env, setEnv, environments, globalDt, setGlobalDt, groupData, setGroupData } = useNavigation()
+    const { env, environments, globalDt, setGlobalDt, groupData, setGroupData } = useNavigation()
     const [notification, setNotification] = useState(null)
     const [notificationSuccess, setNotificationSuccess] = useState(true)
     const [startDate, setStartDate] = useState(null);
@@ -25,13 +26,16 @@ const TestGroups = () => {
     const [loading, setLoading] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [groupToDelete, setGroupToDelete] = useState(null);
+    const [isFinalEnv, setIsFinalEnv] = useState(false);
     const navigate = useNavigate();
     const { showError } = useError()
+    const { isAuthenticated, isLoading } = useAuth0()
+    const { fetchWithAuth } = useAuthenticatedApi(showError)
 
     useEffect(() => {
         async function fetchUniqueDates() {
             try {
-                const data = await fetchWithErrorHandling(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates', showError);
+                const data = await fetchWithAuth(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates');
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
@@ -45,14 +49,20 @@ const TestGroups = () => {
                 console.error('Error fetching dates:', error);
             }
         }
-        fetchUniqueDates()
-    }, [globalDt]);
+        const envOrder = ['DEV', 'TEST', 'PROD'];
+        const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
+        const finalEnv = orderedEnvs[orderedEnvs.length - 1] === env;
+        setIsFinalEnv(finalEnv);
+        if (!isLoading && isAuthenticated) {
+            fetchUniqueDates()
+        }
+    }, [globalDt, env, isLoading]);
 
     useEffect(() => {
-        if (globalDt) {
+        if (globalDt && !isLoading && isAuthenticated) {
             fetchGroupDetailsAndResults(globalDt, null);
         }
-    }, [globalDt]);
+    }, [globalDt, isLoading]);
     
     const fetchGroupDetailsAndResults = async (selectedDate, group_id) => {
         if (selectedDate) {
@@ -60,7 +70,7 @@ const TestGroups = () => {
             const results = {};
             for (const [envName, envData] of Object.entries(environments)) {
                 try {
-                    const data = await fetchWithErrorHandling(`${envData.url}get_test_result_summary/?date=${formattedDate}`, {}, 'get_test_result_summary', showError);
+                    const data = await fetchWithAuth(`${envData.url}get_test_result_summary/?date=${formattedDate}`, {}, 'get_test_result_summary');
                     data.groups_data.forEach(group => {
                         if (!results[group.id]) {
                             results[group.id] = {}
@@ -81,11 +91,7 @@ const TestGroups = () => {
         }
     };
 
-    const goToHomePage = () => {
-        navigate('/');
-    }
-
-    const handleRunClick = (groupId) => {
+    const handleReleaseClick = (groupId) => {
         navigate(`/release/${groupId}`)
     }
 
@@ -115,7 +121,7 @@ const TestGroups = () => {
         setLoading(true);
         showPopupWithMessage("this will not display, it just to show the loading icon", true)
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[environment].url}test_kdb_connection/`,
                 {
                     method: 'POST',
@@ -128,8 +134,7 @@ const TestGroups = () => {
                         tls: testData.TLS
                     }),
                 },
-                'test_kdb_connection',
-                showError
+                'test_kdb_connection'
             )
             if (data.message === "success") {
                 showPopupWithMessage("Connection Successful", true)
@@ -158,13 +163,12 @@ const TestGroups = () => {
         for (const env in groupData[groupToDelete]) {
             if (groupData[groupToDelete].hasOwnProperty(env)) {
                 try {
-                    await fetchWithErrorHandling(
+                    await fetchWithAuth(
                         `${environments[env].url}delete_test_group/${groupToDelete}/`,
                         {
                             method: 'DELETE',
                         },
-                        'delete_test_group',
-                        showError
+                        'delete_test_group'
                     );
                 } catch (error) {
                     console.error(`Error deleting test group for ${env}:`, error);
@@ -202,7 +206,7 @@ const TestGroups = () => {
         }
 
         try {
-            await fetchWithErrorHandling(
+            await fetchWithAuth(
                 `${environments[env].url}upsert_test_group/${groupId}/`,
                 {
                     method: 'POST',
@@ -218,8 +222,7 @@ const TestGroups = () => {
                         tls: data.TLS
                     }),
                 },
-                'upsert_test_group',
-                showError
+                'upsert_test_group'
             )
             
             // Manually update the groupData
@@ -252,6 +255,16 @@ const TestGroups = () => {
     return (
         <>
             <Header/>
+            <div style={{
+                marginTop: "90px",
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
+            </div>
             <div style = {{marginLeft: "7%", marginBottom: "100px"}}>
                 <div className="dateSelector">
                     <DatePicker
@@ -265,13 +278,15 @@ const TestGroups = () => {
                 {Object.keys(groupData).map((groupId) => (
                     <TestGroupRow
                         key={groupId}
+                        currentEnv={env} // for status card
                         environments={environments}
                         group_data={groupData[groupId]}
                         handleTestConnect={handleTestConnect}
                         updateGroupEnv={(env, data, groupName) => updateGroupEnv(groupId, env, data, groupName, false)}
                         goToTestGroupDetails={() => navigate(`/testgroup/${groupId}`)}
                         handleDeleteClick={() => handleDeleteClick(groupId)}
-                        handleRunClick={() => handleRunClick(groupId)}
+                        handleReleaseClick={() => handleReleaseClick(groupId)}
+                        isFinalEnv={isFinalEnv}
                     />
                 ))}
                 {(newGroupData && Object.keys(newGroupData).length > 0) ? (

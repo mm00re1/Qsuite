@@ -7,6 +7,8 @@ import Select from '@mui/material/Select';
 import Header from '../components/Header/Header';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
+import Tooltip from '@mui/material/Tooltip';
+import DeleteIcon from '@mui/icons-material/Delete';
 import DynamicTable from '../components/DynamicTable/DynamicTable';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
@@ -17,12 +19,15 @@ import TestGroupDetailChart from '../components/Charts/TestGroupDetailChart';
 import './TestGroupDetail.css';
 import SearchTests from '../components/SearchTests/SearchTests';
 import BackButton from '../components/BackButton/BackButton';
-import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom'
+import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
+import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
+import { useAuth0 } from "@auth0/auth0-react"
+import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
 const TestGroupDetail = () => {
-    const { globalDt, setGlobalDt, env, setEnv, environments, deleteTestHistory } = useNavigation();
+    const { globalDt, setGlobalDt, env, environments, deleteTestHistory } = useNavigation();
     const navigate = useNavigate();
     const { groupId } = useParams();
     const [testGroupId, setTestGroupId] = useState(groupId);
@@ -40,30 +45,39 @@ const TestGroupDetail = () => {
     const [totalFailed, setTotalFailed] = useState(0);
     const [graphData, setGraphData] = useState([]);
     const [selectedTests, setSelectedTests] = useState([]);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [notification, setNotification] = useState(null)
+    const [notificationSuccess, setNotificationSuccess] = useState(true)
+    const [isFinalEnv, setIsFinalEnv] = useState(false)
     const { showError } = useError()
-    const sortOptions = ["Failed", "Passed", "Time Taken"];
+    const sortOptions = ["Failed", "Passed", "Time Taken"]
+    const { isAuthenticated, isLoading } = useAuth0()
+    const { fetchWithAuth } = useAuthenticatedApi(showError)
 
     useEffect(() => {
         deleteTestHistory()
-    }, []);
+    }, [])
 
     useEffect(() => {
         async function fetchTestGroups() {
             try {
-                const data = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError)
+                const data = await fetchWithAuth(`${environments[env].url}test_groups/`, {}, 'test_groups')
                 setTestGroups(data)
                 setTestGroup(data.find(group => group.id === testGroupId).name)
             } catch (error) {
                 console.error('Error fetching test groups:', error)
             }
         }
-        fetchTestGroups();
-    }, [env]);
+        if (!isLoading && isAuthenticated) {
+            fetchTestGroups()
+        }
+    }, [env, isLoading])
 
     useEffect(() => {
         async function fetchUniqueDates() {
             try {
-                const data = await fetchWithErrorHandling(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates', showError);
+                const data = await fetchWithAuth(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates');
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
@@ -77,35 +91,33 @@ const TestGroupDetail = () => {
                 console.error('Error fetching dates:', error);
             }
         }
-        fetchUniqueDates()
-    }, [globalDt,env]);
+        if (!isLoading && isAuthenticated) {
+            fetchUniqueDates()
+        }
+    }, [globalDt,env,isLoading]);
 
     useEffect(() => {
-        if (globalDt) {
-            fetchGroupStats(globalDt, testGroupId);
-        }
-    }, [testGroups,env]);
+        const envOrder = ['DEV', 'TEST', 'PROD']
+        const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e))
+        let finalEnv = orderedEnvs[orderedEnvs.length - 1] === env
+        // if we have more than one env (e.g. a dev and prod env), we want to first delete tests in dev and then release the changes to prod
+        finalEnv = orderedEnvs.length > 1 && finalEnv
+        setIsFinalEnv(finalEnv)
 
-    useEffect(() => {
-        if (globalDt) {
-            fetchExecutionTimes(globalDt, testGroupId);
+        if (globalDt && !isLoading && isAuthenticated) {
+            fetchGroupStats(globalDt, testGroupId)
+            fetchExecutionTimes(globalDt, testGroupId)
+            fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage, true, finalEnv)
         }
-    }, [testGroups,env]);
-
-    useEffect(() => {
-        if (globalDt) {
-            fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage, true);
-        }
-    }, [testGroups,env]);
+    }, [testGroups,env,isLoading]);
 
     const fetchGroupStats = async (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`,
                 {},
-                'get_test_group_stats',
-                showError
+                'get_test_group_stats'
             )
             setTotalPassed(data.total_passed)
             setTotalFailed(data.total_failed)
@@ -117,11 +129,10 @@ const TestGroupDetail = () => {
     const fetchExecutionTimes = async (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
                 {},
-                'get_test_results_by_day',
-                showError
+                'get_test_results_by_day'
             )
             setGraphData(data.test_data)
         } catch (error) {
@@ -129,17 +140,20 @@ const TestGroupDetail = () => {
         }
     }
 
-    const fetchTestRunResults = async (selectedDate, group_id, sortStyle, pageNumber = 1) => {
+    const fetchTestRunResults = async (selectedDate, group_id, sortStyle, pageNumber = 1, finalEnv) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
 
         if (selectedDate) {
             try {
-                const data = await fetchWithErrorHandling(
+                const data = await fetchWithAuth(
                     `${environments[env].url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`,
                     {},
-                    'get_test_results_by_day',
-                    showError
+                    'get_test_results_by_day'
                 )
+                // add 'Selected': false to each row
+                if (!finalEnv) {
+                    data.test_data = data.test_data.map(row => ({...row, Selected: false}));
+                }
                 setTableData(data.test_data)
                 setColumnList(data.columnList)
                 setTotalPages(data.total_pages)
@@ -152,11 +166,10 @@ const TestGroupDetail = () => {
     const fetchTestsByIds = async (selectedDate, group_id, testIds) => {       
         const formattedDate = selectedDate.replace(/\//g, '-'); 
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
                 {},
-                'get_tests_by_ids',
-                showError
+                'get_tests_by_ids'
             )
             setTableData(data.test_data)
             setColumnList(data.columnList)
@@ -165,10 +178,6 @@ const TestGroupDetail = () => {
             console.error('Error fetching data:', error);
         }
     };
-
-    const goToGroupsPage = () => {
-        navigate('/testgroups');
-    }
 
     const onGroupChange = (event) => {
         setTestGroup(event.target.value);
@@ -179,13 +188,13 @@ const TestGroupDetail = () => {
         setCurrentPage(1);
         fetchGroupStats(globalDt, group_id);
         fetchExecutionTimes(globalDt, group_id);
-        fetchTestRunResults(globalDt, group_id, '', 1);
+        fetchTestRunResults(globalDt, group_id, '', 1, isFinalEnv);
     };
 
     const onSortChange = (event) => {
         setSortOption(event.target.value);
         setCurrentPage(1);
-        fetchTestRunResults(globalDt, testGroupId, event.target.value, 1);
+        fetchTestRunResults(globalDt, testGroupId, event.target.value, 1, isFinalEnv);
     };
 
     const onDateChange = (newDate) => {
@@ -195,7 +204,7 @@ const TestGroupDetail = () => {
         setCurrentPage(1);
         fetchGroupStats(formattedDate, testGroupId);
         fetchExecutionTimes(formattedDate, testGroupId);
-        fetchTestRunResults(formattedDate, testGroupId, '', 1);
+        fetchTestRunResults(formattedDate, testGroupId, '', 1, isFinalEnv);
     };
 
     const isMissing = (date) => {
@@ -205,14 +214,14 @@ const TestGroupDetail = () => {
     const handlePrevPage = () => {
         if (currentPage > 1) {
             setCurrentPage(currentPage - 1);
-            fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage - 1);
+            fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage - 1, isFinalEnv);
         }
     };
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
-            fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage + 1);
+            fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage + 1, isFinalEnv);
 
         }
     };
@@ -244,50 +253,86 @@ const TestGroupDetail = () => {
         setSelectedTests([]);
         setSortOption('');
         setCurrentPage(1);
-        fetchTestRunResults(globalDt, testGroupId, '', 1);
+        fetchTestRunResults(globalDt, testGroupId, '', 1, isFinalEnv);
+    }
+
+    const handleCheckboxChange = (id) => {
+        // set tableData row with this id to the opposite of its previous Selected value
+        const updatedTableData = tableData.map(row => 
+            row.test_case_id === id ? { ...row, Selected: !row.Selected } : row
+        )
+        setTableData(updatedTableData)
+        // if any row is not selected, set selectAll to false
+        //const anyNotSelected = updatedTableData.some(row => !row.Selected);
+        //setSelectAll(!anyNotSelected);
+    }
+
+    const handleDeleteClick = () => {
+        setShowConfirmation(true);
+    }
+
+    const confirmDelete = async () => {
+        // get the test_ids with test => test.Selected
+        setShowConfirmation(false)
+        setLoading(true)
+        showPopupWithMessage("this will not display, it just to show the loading icon", true)
+        
+        let deleteTestSuccess = true
+        const selectedTests = tableData.filter(test => test.Selected)
+        for (const test of selectedTests) {
+            try {
+                await deleteTest(test)
+            } catch (error) {
+                console.error('Error deleting test case:', error)
+                deleteTestSuccess = false
+                break
+            }
+        }
+        if (deleteTestSuccess) {
+            showPopupWithMessage('All tests deleted successfully', true)
+            fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage, isFinalEnv)
+        }
+
+        setLoading(false)
+    }
+
+    const cancelDelete = () => {
+        setShowConfirmation(false);
+    }
+
+    const showPopupWithMessage = (message, success) => {
+        setNotification(message)
+        setNotificationSuccess(success)
+    }
+
+    const deleteTest = async (test) => {
+        try {
+            await fetchWithAuth(
+                `${environments[env].url}delete_test_case/${test.test_case_id}/`,
+                {
+                    method: 'DELETE',
+                },
+                'delete_test_case'
+            );
+        } catch (error) {
+            console.error('Error:', error);
+            showPopupWithMessage(`Failed to delete test case "${test['Test Name']}".`, false)
+            throw error
+        }
     }
 
     return (
         <>
             <Header/>
-            <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
-                <FormControl variant="standard" sx={{ m: 1}} >
-                    <Select
-                        value={env}
-                        label="env"
-                        onChange={(event) => setEnv(event.target.value)}
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: 0,
-                            fontFamily: 'Cascadia Code',
-                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
-                            minWidth: '80px',
-                        }}
-                        MenuProps={{
-                            PaperProps: {
-                            style: {
-                                backgroundColor: 'white', // Dropdown box color
-                            }
-                            }
-                        }}
-                        inputProps={{
-                            style: {
-                              height: '20px', // Adjust the height here
-                              padding: '2px 5px', // Adjust the padding to control content space
-                            },
-                          }}
-                        >
-                        {Object.keys(environments).map((env) => (
-                            <MenuItem
-                                key={env}
-                                value={env}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
-                            >
-                                {env}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            <div style={{
+                marginTop: "90px",
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
             </div>
             <div className="dateGroupPicker">
                 <DatePicker
@@ -409,6 +454,20 @@ const TestGroupDetail = () => {
                     message={"Search for test"}
                     group_id={testGroupId}
                 />
+                {!isFinalEnv && (
+                    <Tooltip title="Delete Selected" arrow>
+                        <DeleteIcon 
+                        onClick={tableData.some(test => test.Selected) ? handleDeleteClick : undefined}
+                        style={{ 
+                            marginTop: '16px',
+                            marginLeft: '40px',
+                            cursor: tableData.some(test => test.Selected) ? 'pointer' : '',
+                            fontSize: '26px',
+                            opacity: tableData.some(test => test.Selected) ? 1 : 0.5,
+                        }}
+                        />
+                    </Tooltip>
+                )}
             </div>
             {(selectedTests.length > 0) && (
                 <div style={{ marginLeft: '5%', marginBottom: '20px', marginTop: '1px' }}>
@@ -422,6 +481,8 @@ const TestGroupDetail = () => {
                     showCircleButton={false}
                     currentDate={globalDt}
                     onTestNameClick={handleTestNameClick}
+                    showCheckbox={!isFinalEnv}
+                    onCheckboxChange={handleCheckboxChange}
                 />
             </div>
             <div className="paginationControls">
@@ -433,6 +494,28 @@ const TestGroupDetail = () => {
                     <ChevronRight />
                 </IconButton>
             </div>
+            {notification && (
+                <NotificationPopup
+                    message={notification}
+                    status={notificationSuccess}
+                    onClose={() => setNotification(null)}
+                    loading={loading}
+                />
+            )}
+            {showConfirmation && (
+                <ConfirmationPopup
+                    message={`Are you sure you want to delete the selected tests?
+                    \n\n${(() => {
+                        const selectedTests = tableData.filter(test => test.Selected).map(test => test["Test Name"]);
+                        if (selectedTests.length > 15) {
+                            return selectedTests.slice(0, 15).join('\n') + '\n...';
+                        }
+                        return selectedTests.join('\n');
+                    })()}`}
+                    onConfirm={confirmDelete}
+                    onCancel={cancelDelete}
+                />
+            )}  
         </>
     );
 };

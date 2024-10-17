@@ -1,11 +1,43 @@
 import React from 'react'
 import { AppBar, Toolbar, Typography, Box } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import EnvSetingsIcon from '../UserProfile/EnvSetingsIcon'
+import MenuDropdown from '../MenuDropdown'
 import QsuiteLogo from '../../../assets/qsuite_logo.svg?react'
+import { useAuth0 } from "@auth0/auth0-react";
+
+
+const LoginButton = () => {
+  const { loginWithRedirect } = useAuth0();
+
+  return <button style={{ padding: '5px' }} onClick={() => loginWithRedirect()}>Log In</button>;
+};
 
 const Header = () => {
   const navigate = useNavigate()
+  const { isAuthenticated, logout } = useAuth0()
+
+  const menuItems = [
+    {
+      name: 'Environment Settings',
+      onChange: () => navigate('/settings')
+    },
+    {
+      name: 'Test Groups',
+      onChange: () => navigate('/testgroups')
+    },
+    {
+      name: 'Create Test',
+      onChange: () => navigate('/addtest')
+    },
+    /*...(isAuthenticated ? [{
+      name: 'Log out',
+      onChange: () => logout({ logoutParams: { returnTo: window.location.origin } })
+    }] : [])*/
+    {
+      name: 'Log out',
+      onChange: () => logout({ logoutParams: { returnTo: window.location.origin } })
+    }
+  ];
 
   const handleTitleClick = () => {
     navigate('/')
@@ -43,7 +75,9 @@ const Header = () => {
           </Typography>
         </Box>
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', cursor: 'pointer' }}>
-          <EnvSetingsIcon />
+          {!isAuthenticated && (<LoginButton />)}
+          <div style={{ width: '40px' }} />
+          <MenuDropdown menuItems={menuItems} />
         </Box>
       </Toolbar>
     </AppBar>

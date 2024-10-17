@@ -16,12 +16,13 @@ import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus';
 import SearchTests from '../components/SearchTests/SearchTests';
 import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
-import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
+import { useAuth0 } from "@auth0/auth0-react"
+import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
 
 const AddTestPage = () => {
-    const { env, setEnv, environments } = useNavigation();
+    const { env, environments } = useNavigation();
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
     const [lines, setLines] = useState(['']); // Start with one empty line
@@ -36,20 +37,29 @@ const AddTestPage = () => {
     const [groupMissing, setGroupMissing] = useState(true);
     const [testCode, setTestCode] = useState(['']);
     const [loading, setLoading] = useState(false);
+    const [isBaseEnv, setIsBaseEnv] = useState(false);
     const navigate = useNavigate();
     const { showError } = useError()
+    const { isAuthenticated, isLoading } = useAuth0()
+    const { fetchWithAuth } = useAuthenticatedApi(showError)
 
     useEffect(() => {
         async function fetchTestGroups() {
             try {
-                const data = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
+                const data = await fetchWithAuth(`${environments[env].url}test_groups/`, {}, 'test_groups');
                 setTestGroups(data);
             } catch (error) {
                 console.error('Error fetching test groups:', error);
             }
         }
-        fetchTestGroups();
-    }, []);
+        const envOrder = ['DEV', 'TEST', 'PROD'];
+        const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
+        const isBaseEnv = orderedEnvs[0] === env;
+        setIsBaseEnv(isBaseEnv);
+        if (!isLoading && isAuthenticated) {
+            fetchTestGroups()
+        }
+    }, [isLoading]);
 
     const goToHomePage = () => {
         navigate('/');
@@ -72,14 +82,13 @@ const AddTestPage = () => {
             setLoading(true);
     
             if (!FreeForm) {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`,
                     {},
-                    'execute_q_function',
-                    showError
+                    'execute_q_function'
                 );
             } else {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_code/`,
                     {
                         method: 'POST',
@@ -88,8 +97,7 @@ const AddTestPage = () => {
                         },
                         body: JSON.stringify({ code: lines, group_id: groupId }),
                     },
-                    'execute_q_code',
-                    showError
+                    'execute_q_code'
                 );
             }
     
@@ -140,7 +148,7 @@ const AddTestPage = () => {
         };
     
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}upsert_test_case/`,
                 {
                     method: 'POST',
@@ -149,8 +157,7 @@ const AddTestPage = () => {
                     },
                     body: JSON.stringify(testData),
                 },
-                'upsert_test_case', // Endpoint identifier for error handling
-                showError // Pass the error handling function
+                'upsert_test_case' // Endpoint identifier for error handling
             );
     
             setTestStatus(true);
@@ -182,11 +189,10 @@ const AddTestPage = () => {
         }
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${newValue}`,
                 {},
-                'view_test_code',
-                showError
+                'view_test_code'
             );
             if (data.success) {
                 setTestCode(data.results.split('\n'))
@@ -213,44 +219,15 @@ const AddTestPage = () => {
     return (
         <>
             <Header/>
-            <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
-                <FormControl variant="standard" sx={{ m: 1}} >
-                    <Select
-                        value={env}
-                        label="env"
-                        onChange={(event) => setEnv(event.target.value)}
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: 0,
-                            fontFamily: 'Cascadia Code',
-                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
-                            minWidth: '80px',
-                        }}
-                        MenuProps={{
-                            PaperProps: {
-                            style: {
-                                backgroundColor: 'white', // Dropdown box color
-                            }
-                            }
-                        }}
-                        inputProps={{
-                            style: {
-                              height: '20px', // Adjust the height here
-                              padding: '2px 5px', // Adjust the padding to control content space
-                            },
-                          }}
-                        >
-                        {Object.keys(environments).map((env) => (
-                            <MenuItem
-                                key={env}
-                                value={env}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
-                            >
-                                {env}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            <div style={{
+                marginTop: "90px",
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
             </div>
             <div className="AddTestFields">
                 <div className="name-input-container">
@@ -372,7 +349,7 @@ const AddTestPage = () => {
             )}
             <div className="actionButtons">
                 <CustomButton onClick={executeCode} disabled={groupMissing}>Execute</CustomButton>
-                <CustomButton onClick={addTest} disabled={groupMissing}>Save Test</CustomButton>
+                <CustomButton onClick={addTest} disabled={groupMissing || !isBaseEnv}>Save Test</CustomButton>
                 {(FreeForm && groupMissing && (Array.isArray(lines) && (lines.length !== 1 || lines[0] !== ''))) && (
                     <Typography color="error" style={{ marginTop: '10px', fontFamily: 'Cascadia Code' }}>
                         A group must be selected to execute q code.

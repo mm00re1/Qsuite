@@ -43,12 +43,7 @@ export const TestDataProvider = ({ children }) => {
 
     const fetchTestGroupsAndData = async (date, testId) => {
         try {
-            const testGroupsData = await fetchWithErrorHandling(
-                `${environments[env].url}test_groups/`, 
-                {}, 
-                'test_groups', 
-                showError
-            );
+            const testGroupsData = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError)
             setTestGroups(testGroupsData);
             if (date && testId) {
                 await fetchTestData(date, testId, testGroupsData);

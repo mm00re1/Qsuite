@@ -4,13 +4,27 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ErrorProvider } from './ErrorContext.jsx';
+import { Auth0Provider } from '@auth0/auth0-react';
+import { NavigationProvider } from './TestNavigationContext'
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <ErrorProvider>
-      <App />
-    </ErrorProvider>
+    <Auth0Provider
+      domain="dev-h2gb33u61uig0fpb.us.auth0.com"
+      clientId="kLeT7w442vflqU8Qowq9ZF9Zc2tKJ4cD"
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+        audience: "https://QsuiteBackendAgents",
+        scope: "read:test_data write:test_data"
+      }}
+    >
+      <ErrorProvider>
+        <NavigationProvider>
+          <App />
+        </NavigationProvider>
+      </ErrorProvider>
+    </Auth0Provider>
   </React.StrictMode>
 );
 

@@ -19,13 +19,14 @@ import { useNavigation } from '../TestNavigationContext'; // Adjust the path as 
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 import SearchTests from '../components/SearchTests/SearchTests';
 import './AddTest.css'
-import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
+import { useAuth0 } from "@auth0/auth0-react"
+import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 //import { useTestData } from '../contexts/TestDataContext'
 
   const TestDetail = () => {
     const { groupId, testId, date } = useParams();
-    const { env, setEnv, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
+    const { env, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
 
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
@@ -47,10 +48,12 @@ import { useError } from '../ErrorContext.jsx'
     const [isBaseEnv, setIsBaseEnv] = useState(false);
     const navigate = useNavigate();
     const { showError } = useError()
-    
+    const { isAuthenticated, isLoading } = useAuth0()
+    const { fetchWithAuth } = useAuthenticatedApi(showError)
+
     const fetchTestData = async (date, testId, testGroupsData) => {
         const formattedDate = date.replace(/\//g, '-');
-        const testData = await fetchWithErrorHandling(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info', showError)
+        const testData = await fetchWithAuth(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info')
         setTestData(testData);
         setGroup(testData.group_name);
         setName(testData.test_name);
@@ -63,7 +66,7 @@ import { useError } from '../ErrorContext.jsx'
 
         if (!testData.free_form) {
             const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-            const testCodeData = await fetchWithErrorHandling(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code', showError)
+            const testCodeData = await fetchWithAuth(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code')
             if (testCodeData.success) {
                 setTestCode(testCodeData.results.split('\n'))
             } else {
@@ -75,7 +78,7 @@ import { useError } from '../ErrorContext.jsx'
 
     const fetchTestGroupsAndData = async (date, testId) => {
         try {
-            const testGroupsData = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
+            const testGroupsData = await fetchWithAuth(`${environments[env].url}test_groups/`, {}, 'test_groups');
             setTestGroups(testGroupsData);
             if (date && testId) {
                 await fetchTestData(date, testId, testGroupsData);
@@ -93,22 +96,23 @@ import { useError } from '../ErrorContext.jsx'
         // order environments in the order ['DEV', 'TEST', 'PROD'] and then set isBaseEnv to true if the current env is the first one
         const envOrder = ['DEV', 'TEST', 'PROD'];
         const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
-        const isBaseEnv = orderedEnvs[0] === env;
-        setIsBaseEnv(isBaseEnv);
-        fetchTestGroupsAndData(date, testId);
-        addTestToHistory(testId);
-    }, [testId, date, env]);
+        const baseEnv = orderedEnvs[0] === env;
+        setIsBaseEnv(baseEnv);
+        if (!isLoading && isAuthenticated) {
+            fetchTestGroupsAndData(date, testId);
+            addTestToHistory(testId);
+        }
+    }, [testId, date, env, isLoading]);
 
     const handleTestNameClick = (test_case_id, dt) => {
         addTestToHistory(testId);
-        navigate(`/testdetail/${test_case_id}/${dt}`);
-
+        navigate(`/testdetail/${groupId}/${test_case_id}/${dt}`)
     };
 
     const goToPrevTestPage = () => {
         removeLastTestFromHistory();
         if (testHistory.length > 1) {
-            navigate(`/testdetail/${testHistory[testHistory.length - 2]}/${date.replace(/\//g, '-')}`);
+            navigate(`/testdetail/${groupId}/${testHistory[testHistory.length - 2]}/${date.replace(/\//g, '-')}`);
         }
     };
 
@@ -131,13 +135,12 @@ import { useError } from '../ErrorContext.jsx'
         try {
             setLoading(true);
             if (!FreeForm) {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
                     {},
-                    'execute_q_function',
-                    showError
+                    'execute_q_function'
             } else {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_code/`,
                     {
                         method: 'POST',
@@ -146,8 +149,7 @@ import { useError } from '../ErrorContext.jsx'
                         },
                         body: JSON.stringify({ code: lines, group_id: groupId }),
                     },
-                    'execute_q_code',
-                    showError
+                    'execute_q_code'
                 );
             }
     
@@ -197,7 +199,7 @@ import { useError } from '../ErrorContext.jsx'
         };
         
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}upsert_test_case/`,
                 {
                     method: 'POST',
@@ -206,8 +208,7 @@ import { useError } from '../ErrorContext.jsx'
                     },
                     body: JSON.stringify(editedTestData),
                 },
-                'upsert_test_case', // Endpoint identifier for error handling
-                showError // Pass the error handling function
+                'upsert_test_case' // Endpoint identifier for error handling
             );
     
             setTestStatus(true);
@@ -240,49 +241,21 @@ import { useError } from '../ErrorContext.jsx'
     return (
         <>
             <Header/>
-            {(testHistory.length > 1) && (
-                <div className="prev-test">
+            {(testHistory.length > 1) ? (
+                <div style={{marginTop: "100px", marginLeft: "20px" }}>
                 <BackButton title={"Previous Test"} onClick={goToPrevTestPage} textColor={'#3E0A66'} fontSize={'16px'} />
               </div>
+            ) : (
+                <div style={{ marginTop: "100px" }}/>
             )}
-            <div style={{ marginTop: "100px", marginRight: "2%", display: 'flex', justifyContent: 'flex-end' }}>
-                <FormControl variant="standard" sx={{ m: 1}} >
-                    <Select
-                        value={env}
-                        label="env"
-                        onChange={(event) => setEnv(event.target.value)}
-                        style={{
-                            backgroundColor: 'white',
-                            borderRadius: 0,
-                            fontFamily: 'Cascadia Code',
-                            boxShadow: '0px 6px 9px rgba(0, 0, 0, 0.1)',
-                            minWidth: '80px',
-                        }}
-                        MenuProps={{
-                            PaperProps: {
-                            style: {
-                                backgroundColor: 'white', // Dropdown box color
-                            }
-                            }
-                        }}
-                        inputProps={{
-                            style: {
-                              height: '20px', // Adjust the height here
-                              padding: '2px 5px', // Adjust the padding to control content space
-                            },
-                          }}
-                        >
-                        {Object.keys(environments).map((env) => (
-                            <MenuItem
-                                key={env}
-                                value={env}
-                                style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center', height: '25px' }}
-                            >
-                                {env}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            <div style={{
+                marginRight: "2%",
+                display: 'flex',
+                justifyContent: 'flex-end',
+                fontFamily: 'Cascadia Code',
+                color: '#A0A0A0'
+            }}>
+                {env}
             </div>
             <div className="AddTestFields">
                 <div className="name-input-container">
