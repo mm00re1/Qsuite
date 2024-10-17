@@ -16,8 +16,9 @@ import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus';
 import SearchTests from '../components/SearchTests/SearchTests';
 import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
-import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
+import { useAuth0 } from "@auth0/auth0-react"
+import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
 
 const AddTestPage = () => {
@@ -39,11 +40,13 @@ const AddTestPage = () => {
     const [isBaseEnv, setIsBaseEnv] = useState(false);
     const navigate = useNavigate();
     const { showError } = useError()
+    const { isAuthenticated, isLoading } = useAuth0()
+    const { fetchWithAuth } = useAuthenticatedApi(showError)
 
     useEffect(() => {
         async function fetchTestGroups() {
             try {
-                const data = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
+                const data = await fetchWithAuth(`${environments[env].url}test_groups/`, {}, 'test_groups');
                 setTestGroups(data);
             } catch (error) {
                 console.error('Error fetching test groups:', error);
@@ -53,8 +56,10 @@ const AddTestPage = () => {
         const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
         const isBaseEnv = orderedEnvs[0] === env;
         setIsBaseEnv(isBaseEnv);
-        fetchTestGroups();
-    }, []);
+        if (!isLoading && isAuthenticated) {
+            fetchTestGroups()
+        }
+    }, [isLoading]);
 
     const goToHomePage = () => {
         navigate('/');
@@ -77,14 +82,13 @@ const AddTestPage = () => {
             setLoading(true);
     
             if (!FreeForm) {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`,
                     {},
-                    'execute_q_function',
-                    showError
+                    'execute_q_function'
                 );
             } else {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_code/`,
                     {
                         method: 'POST',
@@ -93,8 +97,7 @@ const AddTestPage = () => {
                         },
                         body: JSON.stringify({ code: lines, group_id: groupId }),
                     },
-                    'execute_q_code',
-                    showError
+                    'execute_q_code'
                 );
             }
     
@@ -145,7 +148,7 @@ const AddTestPage = () => {
         };
     
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}upsert_test_case/`,
                 {
                     method: 'POST',
@@ -154,8 +157,7 @@ const AddTestPage = () => {
                     },
                     body: JSON.stringify(testData),
                 },
-                'upsert_test_case', // Endpoint identifier for error handling
-                showError // Pass the error handling function
+                'upsert_test_case' // Endpoint identifier for error handling
             );
     
             setTestStatus(true);
@@ -187,11 +189,10 @@ const AddTestPage = () => {
         }
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${newValue}`,
                 {},
-                'view_test_code',
-                showError
+                'view_test_code'
             );
             if (data.success) {
                 setTestCode(data.results.split('\n'))

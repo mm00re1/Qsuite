@@ -3,6 +3,7 @@ import TextField from '@mui/material/TextField'
 import EditIcon from '@mui/icons-material/Edit'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteIcon from '@mui/icons-material/Delete'
+import Tooltip from '@mui/material/Tooltip'
 import Paper from '@mui/material/Paper'
 import grey from '@mui/material/colors/grey'
 
@@ -85,20 +86,26 @@ const EnvironmentRow = ({ environment, url, isEditing, onEdit, onSave, onDelete,
         }}
       />
       {isEditing ? (
-        <SaveIcon
-          onClick={handleSave}
-          style={{ cursor: 'pointer', color: isEditing ? 'black' : grey[400] }}
-        />
+        <Tooltip title="Save Changes" arrow>
+          <SaveIcon
+            onClick={handleSave}
+            style={{ cursor: 'pointer', color: isEditing ? 'black' : grey[400] }}
+          />
+        </Tooltip>
       ) : (
-        <EditIcon
-          onClick={onEdit}
-          style={{ cursor: 'pointer', width: '24px', height: '24px' }}
-        />
+        <Tooltip title="Edit Environment URL" arrow>
+          <EditIcon
+            onClick={onEdit}
+            style={{ cursor: 'pointer', width: '24px', height: '24px' }}
+          />
+        </Tooltip>
       )}
-      <DeleteIcon
-        onClick={onDelete}
-        style={{ cursor: 'pointer', width: '24px', height: '24px', marginLeft: '16px' }}
-      />
+      <Tooltip title="Delete Environment" arrow>
+        <DeleteIcon
+          onClick={onDelete}
+          style={{ cursor: 'pointer', width: '24px', height: '24px', marginLeft: '16px' }}
+        />
+      </Tooltip>
     </div>
   )
 }

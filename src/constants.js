@@ -1,3 +1,10 @@
+//const env = 'development'
+const env = 'production'
+// process.env.NODE_ENV
+//export const API_BASE_URL = env === 'development' ? 'https://staging2.kdbsuite.com/' : '/';
+//export const API_BASE_URL = env === 'development' ? 'http://qsuite-local.local/' : '/';
+export const API_BASE_URL = env === 'development' ? 'http://localhost:10016' : '';
+
 export const endpoint_errors = {
     "test_groups": "Could not retrieve test group names",
     "execute_q_function": "Error while attempting to execute q function",

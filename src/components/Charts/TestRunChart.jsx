@@ -67,10 +67,10 @@ const TestRunChart = ({ testResults }) => {
             width: '100%',
             marginLeft: '18%',
             backgroundColor: 'white', // Dark background color
-            boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.3)', // Box shadow
+            boxShadow: '0px 3px 5px rgba(0, 0, 0, 0.2)', // Box shadow
             padding: '20px', // Add some padding
             borderRadius: '0px', // Rounded corners
-            //border: '1px solid black'
+            //border: '1px solid #A7A7A7'
         }}>
             <Chart
                 options={chartData.options}

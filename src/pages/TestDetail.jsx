@@ -19,8 +19,9 @@ import { useNavigation } from '../TestNavigationContext'; // Adjust the path as 
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 import SearchTests from '../components/SearchTests/SearchTests';
 import './AddTest.css'
-import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
+import { useAuth0 } from "@auth0/auth0-react"
+import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 //import { useTestData } from '../contexts/TestDataContext'
 
   const TestDetail = () => {
@@ -47,10 +48,12 @@ import { useError } from '../ErrorContext.jsx'
     const [isBaseEnv, setIsBaseEnv] = useState(false);
     const navigate = useNavigate();
     const { showError } = useError()
-    
+    const { isAuthenticated, isLoading } = useAuth0()
+    const { fetchWithAuth } = useAuthenticatedApi(showError)
+
     const fetchTestData = async (date, testId, testGroupsData) => {
         const formattedDate = date.replace(/\//g, '-');
-        const testData = await fetchWithErrorHandling(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info', showError)
+        const testData = await fetchWithAuth(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info')
         setTestData(testData);
         setGroup(testData.group_name);
         setName(testData.test_name);
@@ -63,7 +66,7 @@ import { useError } from '../ErrorContext.jsx'
 
         if (!testData.free_form) {
             const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-            const testCodeData = await fetchWithErrorHandling(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code', showError)
+            const testCodeData = await fetchWithAuth(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code')
             if (testCodeData.success) {
                 setTestCode(testCodeData.results.split('\n'))
             } else {
@@ -75,7 +78,7 @@ import { useError } from '../ErrorContext.jsx'
 
     const fetchTestGroupsAndData = async (date, testId) => {
         try {
-            const testGroupsData = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
+            const testGroupsData = await fetchWithAuth(`${environments[env].url}test_groups/`, {}, 'test_groups');
             setTestGroups(testGroupsData);
             if (date && testId) {
                 await fetchTestData(date, testId, testGroupsData);
@@ -95,9 +98,11 @@ import { useError } from '../ErrorContext.jsx'
         const orderedEnvs = envOrder.filter(e => environments.hasOwnProperty(e));
         const baseEnv = orderedEnvs[0] === env;
         setIsBaseEnv(baseEnv);
-        fetchTestGroupsAndData(date, testId);
-        addTestToHistory(testId);
-    }, [testId, date, env]);
+        if (!isLoading && isAuthenticated) {
+            fetchTestGroupsAndData(date, testId);
+            addTestToHistory(testId);
+        }
+    }, [testId, date, env, isLoading]);
 
     const handleTestNameClick = (test_case_id, dt) => {
         addTestToHistory(testId);
@@ -130,13 +135,12 @@ import { useError } from '../ErrorContext.jsx'
         try {
             setLoading(true);
             if (!FreeForm) {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
                     {},
-                    'execute_q_function',
-                    showError
+                    'execute_q_function'
             } else {
-                fetchPromise = fetchWithErrorHandling(
+                fetchPromise = fetchWithAuth(
                     `${environments[env].url}execute_q_code/`,
                     {
                         method: 'POST',
@@ -145,8 +149,7 @@ import { useError } from '../ErrorContext.jsx'
                         },
                         body: JSON.stringify({ code: lines, group_id: groupId }),
                     },
-                    'execute_q_code',
-                    showError
+                    'execute_q_code'
                 );
             }
     
@@ -196,7 +199,7 @@ import { useError } from '../ErrorContext.jsx'
         };
         
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}upsert_test_case/`,
                 {
                     method: 'POST',
@@ -205,8 +208,7 @@ import { useError } from '../ErrorContext.jsx'
                     },
                     body: JSON.stringify(editedTestData),
                 },
-                'upsert_test_case', // Endpoint identifier for error handling
-                showError // Pass the error handling function
+                'upsert_test_case' // Endpoint identifier for error handling
             );
     
             setTestStatus(true);

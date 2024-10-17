@@ -11,12 +11,13 @@ import Header from '../components/Header/Header';
 import DynamicTable from '../components/DynamicTable/DynamicTable';
 import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import './TestGroupDetail.css';
-import { fetchWithErrorHandling } from '../utils/api'
 import { useError } from '../ErrorContext.jsx'
 import { useParams } from 'react-router-dom';
 import ReleaseEnvPipeline from '../components/ReleaseEnvPipeline'
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
 import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
+import { useAuth0 } from "@auth0/auth0-react"
+import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
 const Release = () => {
     const { globalDt, setGlobalDt, env, environments } = useNavigation();
@@ -37,10 +38,12 @@ const Release = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [loading, setLoading] = useState(false);
     const { showError } = useError()
+    const { isAuthenticated, isLoading } = useAuth0()
+    const { fetchWithAuth } = useAuthenticatedApi(showError)
 
     async function fetchTestGroups(baseEnv) {
         try {
-            const data = await fetchWithErrorHandling(`${environments[baseEnv].url}test_groups/`, {}, 'test_groups', showError)
+            const data = await fetchWithAuth(`${environments[baseEnv].url}test_groups/`, {}, 'test_groups')
             setTestGroups(data)
             setTestGroup(data.find(group => group.id === testGroupId).name)
         } catch (error) {
@@ -61,22 +64,23 @@ const Release = () => {
     const fetchReleaseTests = async (group_id, baseEnv, targetEnv) => {
         try {
             if (baseEnv && targetEnv) {
-                const baseData = await fetchWithErrorHandling(
+                const baseData = await fetchWithAuth(
                     `${environments[baseEnv].url}get_tests_per_group/?group_id=${group_id}`,
                     {},
-                    'get_tests_per_group',
-                    showError
+                    'get_tests_per_group'
                 );
 
-                const targetData = await fetchWithErrorHandling(
+                const targetData = await fetchWithAuth(
                     `${environments[targetEnv].url}get_tests_per_group/?group_id=${group_id}`,
                     {},
                     'get_tests_per_group',
                     handleTargetEnvFetchError
                 );
 
+                const baseTestMap = new Map(baseData.test_data.map(item => [item.test_case_id, item]));
                 const targetTestMap = new Map(targetData.test_data.map(item => [item.test_case_id, item]));
-                const filteredData = baseData.test_data.map(baseItem => {
+                
+                let filteredData = baseData.test_data.map(baseItem => {
                     const targetItem = targetTestMap.get(baseItem.test_case_id);
                     let releaseStatus = "NEW";
                     
@@ -104,6 +108,23 @@ const Release = () => {
                         'Status': null
                     };
                 }).filter(Boolean); // Remove null entries
+
+                // Add tests that exist in targetData but not in baseData
+                const deletedTests = targetData.test_data.filter(targetItem => !baseTestMap.has(targetItem.test_case_id))
+                    .map(targetItem => ({
+                        'test_case_id': targetItem.test_case_id,
+                        'free_form': targetItem.free_form,
+                        'test_code': targetItem.test_code,
+                        'dependencies': targetItem.dependencies,
+                        'Test Name': targetItem['Test Name'],
+                        'Creation Date': targetItem['Creation Date'] ? targetItem['Creation Date'].split('T')[0] : null,
+                        'Release Status': "Deleted",
+                        'Selected': false,
+                        'Status': null
+                    }));
+
+                // Append deletedTests to filteredData
+                filteredData = [...filteredData, ...deletedTests];
 
                 setTableData(filteredData);
                 if (filteredData.length === 0) {
@@ -148,16 +169,18 @@ const Release = () => {
         setReleaseEnvironments(releaseEnvs)
         setEnvironmentTarget(targetEnv)
 
-        fetchTestGroups(baseEnv);
-        fetchReleaseTests(testGroupId, baseEnv, targetEnv);
+        if (!isLoading && isAuthenticated) {
+            fetchTestGroups(baseEnv)
+            fetchReleaseTests(testGroupId, baseEnv, targetEnv)
+        }
 
-    }, [environments, env]);
+    }, [environments, env, isLoading]);
 
     useEffect(() => {
         async function fetchUniqueDates() {
             if (!globalDt) {
                 try {
-                    const data = await fetchWithErrorHandling(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates', showError);
+                    const data = await fetchWithAuth(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates');
                     if (data.latest_date) {
                         setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
                     } else {
@@ -168,17 +191,18 @@ const Release = () => {
                 }
             }
         }
-        fetchUniqueDates()
-    }, [globalDt]);
+        if (!isLoading && isAuthenticated) {
+            fetchUniqueDates()
+        }
+    }, [globalDt, isLoading]);
 
     const fetchTestsByIds = async (selectedDate, group_id, testIds) => {       
         const formattedDate = selectedDate.replace(/\//g, '-'); 
         try {
-            const data = await fetchWithErrorHandling(
+            const data = await fetchWithAuth(
                 `${environments[env].url}get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
                 {},
-                'get_tests_by_ids',
-                showError
+                'get_tests_by_ids'
             )
             setTableData(data.test_data)
             setColumnList(data.columnList)
@@ -256,18 +280,18 @@ const Release = () => {
         setLoading(true)
         showPopupWithMessage("this will not display, it just to show the loading icon", true)
         
-        let addTestSuccess = true
+        let pushTestSuccess = true
         const selectedTests = tableData.filter(test => test.Selected)
         for (const test of selectedTests) {
             try {
-                await addTest(testGroupId, test)
+                await pushTest(testGroupId, test)
             } catch (error) {
                 console.error('Error adding test case:', error)
-                addTestSuccess = false
+                pushTestSuccess = false
                 break
             }
         }
-        if (addTestSuccess) {
+        if (pushTestSuccess) {
             showPopupWithMessage('All tests released successfully', true)
             fetchReleaseTests(testGroupId, releaseEnv, environmentTarget)
         }
@@ -279,7 +303,7 @@ const Release = () => {
         setShowConfirmation(false);
     }
 
-    const addTest = async (group_id, test) => {        
+    const pushTest = async (group_id, test) => {        
         const testData = {
             id: test.test_case_id,
             group_id: group_id,
@@ -289,23 +313,32 @@ const Release = () => {
             free_form: test.free_form,
         };
         console.log("testData: ", testData)
-    
+
         try {
-            await fetchWithErrorHandling(
-                `${environments[environmentTarget].url}upsert_test_case/`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+            if (test["Release Status"] === "Deleted") {
+                await fetchWithAuth(
+                    `${environments[environmentTarget].url}delete_test_case/${test.test_case_id}/`,
+                    {
+                        method: 'DELETE',
                     },
-                    body: JSON.stringify(testData),
-                },
-                'upsert_test_case', // Endpoint identifier for error handling
-                showError // Pass the error handling function
-            );    
+                    'delete_test_case'
+                );
+            } else {
+                await fetchWithAuth(
+                    `${environments[environmentTarget].url}upsert_test_case/`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(testData),
+                    },
+                    'upsert_test_case' // Endpoint identifier for error handling
+                );
+            }
         } catch (error) {
             console.error('Error:', error);
-            showPopupWithMessage(`Failed to add test case ${test['Test Name']}.`, false)
+            showPopupWithMessage(`Failed to release test case "${test['Test Name']}".`, false)
             throw error
         }
     }

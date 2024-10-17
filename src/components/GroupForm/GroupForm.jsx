@@ -164,7 +164,7 @@ const GroupForm = ({
             <SaveIcon
                 onClick={editing ? updateGroupEnv : undefined}
                 disabled={!editing}
-                style={{ cursor: 'pointer', color: editing ? 'black' : grey[400] }}
+                style={{ cursor: editing ? 'pointer' : 'default', color: editing ? 'black' : grey[400] }}
             />
         </div>
     );
