@@ -26,7 +26,7 @@ function App() {
   useEffect(() => {
     async function fetchAgentUrls() {
         try {
-            const data = await fetchWithAuth("http://localhost:8004/get_agent_urls/", {}, "get_agent_urls")
+            const data = await fetchWithAuth("/api/get_agent_urls/", {}, "get_agent_urls")
             const formattedEnvironments = Object.entries(data).reduce((acc, [key, value]) => {
               acc[key] = { url: value, isEditing: false, isSaved: true }
               return acc
