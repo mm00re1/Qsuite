@@ -1,6 +1,6 @@
 import React from 'react'
 
-const StatusCard = ({ title, value, valueStyle }) => (
+const StatusCard = ({ title, titleStyle, value, valueStyle }) => (
   <div style={{
     display: 'flex',
     justifyContent: 'space-between',
@@ -10,7 +10,7 @@ const StatusCard = ({ title, value, valueStyle }) => (
     borderRadius: '0',
     boxShadow: '0px 3px 5px rgba(0, 0, 0, 0.2)',
   }}>
-    <div style={{fontSize: '14px', color: 'black'}}>{title}</div>
+    <div style={{fontSize: '14px', color: 'black', ...titleStyle }}>{title}</div>
     <div style={{ fontSize: '16px', fontWeight: 'bold', ...valueStyle }}>
       {value.split('/').map((part, index, array) => 
         index === 0 ? (

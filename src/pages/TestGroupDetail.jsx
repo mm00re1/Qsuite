@@ -25,6 +25,7 @@ import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
 import { useAuth0 } from "@auth0/auth0-react"
 import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
+import CircularProgress from '@mui/material/CircularProgress'
 
 const TestGroupDetail = () => {
     const { globalDt, setGlobalDt, env, environments, deleteTestHistory } = useNavigation();
@@ -47,6 +48,7 @@ const TestGroupDetail = () => {
     const [selectedTests, setSelectedTests] = useState([]);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [chartLoading, setChartLoading] = useState(false);
     const [notification, setNotification] = useState(null)
     const [notificationSuccess, setNotificationSuccess] = useState(true)
     const [isFinalEnv, setIsFinalEnv] = useState(false)
@@ -128,6 +130,7 @@ const TestGroupDetail = () => {
 
     const fetchExecutionTimes = async (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
+        setChartLoading(true)
         try {
             const data = await fetchWithAuth(
                 `${environments[env].url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
@@ -135,8 +138,10 @@ const TestGroupDetail = () => {
                 'get_test_results_by_day'
             )
             setGraphData(data.test_data)
+            setChartLoading(false)
         } catch (error) {
             console.error('Error fetching data:', error);
+            setChartLoading(false)
         }
     }
 
@@ -408,7 +413,18 @@ const TestGroupDetail = () => {
                         display: 'flex',
                         justifyContent: 'center',
                     }}>
-                    <TestGroupDetailChart data={graphData} />
+                    {chartLoading ? (
+                        <div style={{ margin: 'auto' }}>
+                            <div style={{ marginBottom: '210px' }}/>
+                            <CircularProgress
+                                style={{ color: '#95B0F8', width: '33px', height: '33px' }}
+                                thickness={7}
+                            />
+                            <div style={{ marginBottom: '210px' }}/>
+                        </div>
+                    ) : (
+                        <TestGroupDetailChart data={graphData} />
+                    )}
                 </div>
             </div>
             <div className="groupAndDate">

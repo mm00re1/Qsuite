@@ -27,6 +27,7 @@ const HomePage = () => {
     const [vsPrevDay, setVsPrevDay] = useState(0);
     const [vsMonthAvg, setVsMonthAvg] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [lastDay, setLastDay] = useState("")
     const navigate = useNavigate()
     const { showError } = useError()
     const { fetchWithAuth } = useAuthenticatedApi(showError);
@@ -94,6 +95,7 @@ const HomePage = () => {
             try {
                 const data = await fetchWithAuth(`${environments[env].url}get_test_results_30_days/`, {}, 'get_test_results_30_days');
                 setTestResults(data)
+                setLastDay(data[data.length - 1].date)
                 calcDisplayMetrics(data)
             } catch (error) {
                 console.error('Error fetching test results:', error);
@@ -121,6 +123,7 @@ const HomePage = () => {
                     'get_test_results_30_days',
                 );
                 setTestResults(data)  // Save the result to the state
+                setLastDay(data[data.length - 1].date)
                 calcDisplayMetrics(data)
             } catch (error) {
                 console.error('Error fetching test results:', error);
@@ -224,6 +227,14 @@ const HomePage = () => {
                         width: '250px',
                         fontFamily: 'Cascadia Code'
                     }}>
+                        <div style={{marginBottom: '20px'}}>
+                        <StatusCard
+                            title="Test Stats"
+                            titleStyle={{ fontWeight: 'bold' }}
+                            value={lastDay}
+                            valueStyle={{ color: 'black' }}
+                        />
+                        </div>
                         <StatusCard
                             title="Passed/Failed"
                             value={`${lastPassedCount}/${lastFailedCount}`}

@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Autocomplete, TextField, CircularProgress, Box, Typography } from '@mui/material'
 import debounce from 'lodash.debounce'
 import { useNavigation } from '../../TestNavigationContext'
-import { fetchWithErrorHandling } from '../../utils/api'
 import { useError } from '../../ErrorContext.jsx'
 import { useAuthenticatedApi } from "../../hooks/useAuthenticatedApi"
 

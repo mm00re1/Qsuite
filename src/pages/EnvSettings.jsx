@@ -8,14 +8,16 @@ import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup
 import { useError } from '../ErrorContext.jsx'
 import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
-
 const EnvSettings = () => {
-  const { env, setEnv, environments, setEnvironments } = useNavigation();
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [environmentToDelete, setEnvironmentToDelete] = useState(null);
+  const { env, setEnv, environments, setEnvironments } = useNavigation()
+  const [envCredentials, setEnvCredentials] = useState({})
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [environmentToDelete, setEnvironmentToDelete] = useState(null)
+  const [loading, setLoading] = useState(false)
   const { showError } = useError()
   const { fetchWithAuth } = useAuthenticatedApi(showError)
 
+  const connectionOptions = ["User/Password", "Azure Oauth"]
 
   const fetchAndSetEnvironments = async (fetchWithAuth, setEnvironments, setEnv, env) => {
     try {
@@ -26,19 +28,30 @@ const EnvSettings = () => {
         return acc;
       }, {});
 
+      const updatedEnvironments = await Promise.all(
+        Object.entries(formattedEnvironments).map(async ([key, env]) => {
+          const conn_method = await fetchWithAuth(`${env.url}get_connect_method/`, {}, "get_connect_method")
+          // Process credentials as needed
+          return [key, { ...env, conn_method }]
+        })
+      )
+
+      // Convert back to an object and update the environments state
+      const updatedEnvObject = Object.fromEntries(updatedEnvironments)
+
       const unsavedEnvironments = Object.entries(environments).reduce((acc, [key, value]) => {
-        // Only include unsaved environments that are not already in formattedEnvironments
-        if (!value.isSaved && !formattedEnvironments.hasOwnProperty(key)) {
+        // Only include unsaved environments that are not already in updatedEnvObject
+        if (!value.isSaved && !updatedEnvObject.hasOwnProperty(key)) {
           acc[key] = value
         }
         return acc
       }, {})
   
-      const mergedEnvironments = { ...formattedEnvironments, ...unsavedEnvironments }
+      const mergedEnvironments = { ...updatedEnvObject, ...unsavedEnvironments }
       setEnvironments(mergedEnvironments)
   
       const envOrder = ['DEV', 'TEST', 'PROD']
-      const orderedEnvs = envOrder.filter(e => formattedEnvironments.hasOwnProperty(e))
+      const orderedEnvs = envOrder.filter(e => updatedEnvObject.hasOwnProperty(e))
   
       if (!orderedEnvs.includes(env)) {
         const newEnv = orderedEnvs.length > 0 ? orderedEnvs[0] : ""
@@ -53,11 +66,22 @@ const EnvSettings = () => {
     setEnv(environment)
   }
 
-  const handleEdit = (environment) => {
+  const handleEdit = async (environment) => {
     setEnvironments((prevEnvironments) => ({
       ...prevEnvironments,
       [environment]: { ...prevEnvironments[environment], isEditing: true }
     }));
+    setLoading(true)
+    try {
+      const data = await fetchWithAuth(`${environments[environment].url}get_credentials/`, {}, 'get_credentials')
+      setEnvCredentials((prevCredentials) => ({
+        ...prevCredentials,
+        [environment]: data // Set or update the specific environment key with the API result
+      }))
+    } catch (error) {
+      console.error('Error fetching kdb credentials:', error)
+    }
+    setLoading(false)
   }
 
   const handleDelete = (environment) => {
@@ -120,11 +144,43 @@ const EnvSettings = () => {
         'add_env_url'
       );
 
+      await fetchWithAuth(
+        `${environments[environment].url}store_credentials/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...envCredentials[environment],
+            'method': environments[environment].conn_method
+          }),
+        },
+        'store_credentials'
+      );
       fetchAndSetEnvironments(fetchWithAuth, setEnvironments, setEnv, env)
+      setEnvCredentials((prevCredentials) => ({
+        ...prevCredentials,
+        [environment]: {}
+      }))
 
     } catch (error) {
         console.error('Error fetching agent urls:', error)
     }
+  }
+
+  const handleCredentialChange = (environment, credKey, credValue) => {
+    setEnvCredentials((prevCredentials) => ({
+      ...prevCredentials,
+      [environment]: { ...prevCredentials[environment], [credKey]: credValue }
+    }))
+  }
+
+  const handleConnMethodChange = (environment, newConnMethod) => {
+    setEnvironments((prevEnvironments) => ({
+      ...prevEnvironments,
+      [environment]: { ...prevEnvironments[environment], conn_method: newConnMethod }
+    }))
   }
 
   const handleAddEnvironment = (environment) => {
@@ -144,12 +200,18 @@ const EnvSettings = () => {
               <EnvironmentRow
                 environment={environment}
                 url={environments[environment].url}
+                connMethod={environments[environment].conn_method}
+                connectionOptions={connectionOptions} // should this be moved to Environment Row?
                 isEditing={environments[environment].isEditing}
                 onEdit={() => handleEdit(environment)}
                 onSave={(newUrl) => handleSave(environment, newUrl)}
                 onDelete={() => handleDelete(environment)}
                 onActivate={() => handleActivate(environment)}
                 isActive={env === environment}
+                envCredentials={envCredentials[environment]}
+                onCredentialChange={(credKey, credValue) => handleCredentialChange(environment,credKey, credValue)}
+                onConnMethodChange={(newConnMethod) => handleConnMethodChange(environment, newConnMethod)}
+                loading={loading}
               />
             ) : (
                 <CustomButton 
