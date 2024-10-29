@@ -7,6 +7,7 @@ import TestGroupDetail from './pages/TestGroupDetail'
 import TestDetail from './pages/TestDetail'
 import EnvSettings from './pages/EnvSettings'
 import Release from './pages/Release'
+import Login from './pages/Login'
 import { LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import 'dayjs/locale/en-gb'
@@ -36,12 +37,39 @@ function App() {
             const orderedEnvs = envOrder.filter(e => formattedEnvironments.hasOwnProperty(e))
             const env = orderedEnvs.length > 0 ? orderedEnvs[0] : ""
             setEnv(env)
+            return formattedEnvironments  // Return for chaining
         } catch (error) {
             console.error('Error fetching agent urls:', error)
+            return {}
         }
     }
+
+    async function getKdbConnMethodFromEachEnv(formattedEnvironments) {
+      try {
+        // Make second API call to each environment's URL
+        const updatedEnvironments = await Promise.all(
+          Object.entries(formattedEnvironments).map(async ([key, env]) => {
+            console.log(env)
+            const conn_method = await fetchWithAuth(`${env.url}get_connect_method/`, {}, "get_credentials")
+            // Process credentials as needed
+            console.log(`conn_method for ${env.url}:`, conn_method)
+            return [key, { ...env, conn_method }]
+          })
+        )
+
+        // Convert back to an object and update the environments state
+        const updatedEnvObject = Object.fromEntries(updatedEnvironments)
+        setEnvironments(updatedEnvObject)
+
+      } catch (error) {
+        console.error('Error fetching credentials for one of the backend agents:', error)
+      }
+    }
+
     if (!isLoading && isAuthenticated) {
       fetchAgentUrls()
+        .then((formattedEnvironments) => getKdbConnMethodFromEachEnv(formattedEnvironments))
+        .catch((error) => console.error('Error in fetching URLs or credentials:', error))
     }
   }, [isLoading])
 
@@ -58,6 +86,7 @@ function App() {
             <Route path="/testdetail/:groupId/:testId/:date" element={<TestDetail />} />
             <Route path="/settings" element={<EnvSettings />} />
             <Route path="/release/:groupId" element={<Release />} />
+            <Route path="/login" element={<Login />} />
           </Routes>
         </Router>
         {errorData && <ErrorBanner endpoint={errorData.endpoint} errorMessage={errorData.errorMessage} />}
