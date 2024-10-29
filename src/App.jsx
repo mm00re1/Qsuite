@@ -49,10 +49,8 @@ function App() {
         // Make second API call to each environment's URL
         const updatedEnvironments = await Promise.all(
           Object.entries(formattedEnvironments).map(async ([key, env]) => {
-            console.log(env)
             const conn_method = await fetchWithAuth(`${env.url}get_connect_method/`, {}, "get_credentials")
             // Process credentials as needed
-            console.log(`conn_method for ${env.url}:`, conn_method)
             return [key, { ...env, conn_method }]
           })
         )
