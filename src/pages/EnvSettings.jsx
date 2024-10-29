@@ -190,22 +190,6 @@ const EnvSettings = () => {
     }));
   }
 
-  const onUsernameChange = (event) => {
-    setUsername(event.target.value)
-  }
-
-  const onPasswordChange = (event) => {
-    setPassword(event.target.value)
-  }
-
-  const onClientIdChange = (event) => {
-    setClientId(event.target.value)
-  }
-
-  const onClientSecretChange = (event) => {
-    setClientSecret(event.target.value)
-  }
-
   return (
     <>
       <Header/>
