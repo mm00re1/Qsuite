@@ -74,8 +74,10 @@ const HomePage = () => {
     useEffect(() => {
         async function fetchTestGroups() {
             try {
+                if (!environments[env] || !environments[env].url) {
+                    return
+                }
                 const data = await fetchWithAuth( `${environments[env].url}test_groups/`, {}, "test_groups");
-                //const data = await fetchWithErrorHandling(`${environments[env].url}test_groups/`, {}, 'test_groups', showError);
                 setTestGroupsFull(data);
                 const groupNames = data.map(group => group.name);
                 setTestGroups(groupNames);
@@ -93,10 +95,18 @@ const HomePage = () => {
         async function fetchTestResults() {
             setLoading(true)
             try {
-                const data = await fetchWithAuth(`${environments[env].url}get_test_results_30_days/`, {}, 'get_test_results_30_days');
-                setTestResults(data)
-                setLastDay(data[data.length - 1].date)
-                calcDisplayMetrics(data)
+                if (!environments[env] || !environments[env].url) {
+                    return
+                }
+                const data = await fetchWithAuth(`${environments[env].url}get_test_results_30_days/`, {}, 'get_test_results_30_days')
+                if (data.length > 0) {
+                    setTestResults(data)
+                    setLastDay(data[data.length - 1].date)
+                    calcDisplayMetrics(data)
+                } else {
+                    setTestResults([])
+                    setLastDay("")
+                }
             } catch (error) {
                 console.error('Error fetching test results:', error);
             } finally {
