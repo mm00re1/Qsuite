@@ -21,7 +21,6 @@ const TestGroupRow = ({
     handleReleaseClick,
     isFinalEnv
     }) => {
-    console.log(group_data)
     const detailsRef = useRef(null)
     const [groupName, setGroupName] = useState(group_data && group_data.DEV ? group_data.DEV.Name : "" || "")
     const [groupData, setGroupData] = useState(() => {

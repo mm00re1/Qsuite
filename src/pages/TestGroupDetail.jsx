@@ -237,8 +237,6 @@ const TestGroupDetail = () => {
 
     const handleSelectedTestChange = (event, newValue) => {
         // Avoid adding duplicates
-        console.log("existing tests: ", selectedTests);
-        console.log("adding test: ", newValue);
         setCurrentPage(1);
 
         if (!selectedTests.some(test => test.test_case_id === newValue.test_case_id)) {

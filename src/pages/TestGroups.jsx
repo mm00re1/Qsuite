@@ -35,6 +35,9 @@ const TestGroups = () => {
     useEffect(() => {
         async function fetchUniqueDates() {
             try {
+                if (!environments[env] || !environments[env].url) {
+                    return
+                }
                 const data = await fetchWithAuth(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates');
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
@@ -77,7 +80,6 @@ const TestGroups = () => {
                         }
                         results[group.id][envName] = group;
                     });
-                    console.log(data)
                 } catch (error) {
                     console.error(`Error fetching data for ${envName}:`, error);
                 }
