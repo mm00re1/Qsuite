@@ -53,7 +53,7 @@ import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
     const fetchTestData = async (date, testId, testGroupsData) => {
         const formattedDate = date.replace(/\//g, '-');
-        const testData = await fetchWithAuth(`${environments[env].url}get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info')
+        const testData = await fetchWithAuth(`${environments[env].url}/get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info')
         setTestData(testData);
         setGroup(testData.group_name);
         setName(testData.test_name);
@@ -66,7 +66,7 @@ import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
         if (!testData.free_form) {
             const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-            const testCodeData = await fetchWithAuth(`${environments[env].url}view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code')
+            const testCodeData = await fetchWithAuth(`${environments[env].url}/view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code')
             if (testCodeData.success) {
                 setTestCode(testCodeData.results.split('\n'))
             } else {
@@ -78,7 +78,7 @@ import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 
     const fetchTestGroupsAndData = async (date, testId) => {
         try {
-            const testGroupsData = await fetchWithAuth(`${environments[env].url}test_groups/`, {}, 'test_groups');
+            const testGroupsData = await fetchWithAuth(`${environments[env].url}/test_groups/`, {}, 'test_groups');
             setTestGroups(testGroupsData);
             if (date && testId) {
                 await fetchTestData(date, testId, testGroupsData);
@@ -136,12 +136,12 @@ import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
             setLoading(true);
             if (!FreeForm) {
                 fetchPromise = fetchWithAuth(
-                    `${environments[env].url}execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
+                    `${environments[env].url}/execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
                     {},
                     'execute_q_function'
             } else {
                 fetchPromise = fetchWithAuth(
-                    `${environments[env].url}execute_q_code/`,
+                    `${environments[env].url}/execute_q_code/`,
                     {
                         method: 'POST',
                         headers: {
@@ -200,7 +200,7 @@ import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
         
         try {
             const data = await fetchWithAuth(
-                `${environments[env].url}upsert_test_case/`,
+                `${environments[env].url}/upsert_test_case/`,
                 {
                     method: 'POST',
                     headers: {

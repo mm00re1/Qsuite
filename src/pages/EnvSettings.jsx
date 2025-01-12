@@ -5,8 +5,10 @@ import CustomButton from '../components/CustomButton/CustomButton'
 import Header from '../components/Header/Header'
 import { useNavigation } from '../TestNavigationContext'
 import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
+import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
 import { useError } from '../ErrorContext.jsx'
 import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
+import { loadEnvironmentsFromLocalStorage, saveEnvironmentsToLocalStorage } from '../utils/api'
 
 const EnvSettings = () => {
   const { env, setEnv, environments, setEnvironments } = useNavigation()
@@ -14,6 +16,9 @@ const EnvSettings = () => {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [environmentToDelete, setEnvironmentToDelete] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [notification, setNotification] = useState(null)
+  const [notificationSuccess, setNotificationSuccess] = useState(true)
   const { showError } = useError()
   const { fetchWithAuth } = useAuthenticatedApi(showError)
 
@@ -21,16 +26,15 @@ const EnvSettings = () => {
 
   const fetchAndSetEnvironments = async (fetchWithAuth, setEnvironments, setEnv, env) => {
     try {
-      const data = await fetchWithAuth("/api/get_agent_urls/", {}, "get_agent_urls");
-  
-      const formattedEnvironments = Object.entries(data).reduce((acc, [key, value]) => {
-        acc[key] = { url: value, isEditing: false, isSaved: true };
+      const envs = loadEnvironmentsFromLocalStorage();
+      const formattedEnvironments = Object.entries(envs).reduce((acc, [key, value]) => {
+        acc[key] = { url: value.url, isEditing: false, isSaved: true };
         return acc;
       }, {});
 
       const updatedEnvironments = await Promise.all(
         Object.entries(formattedEnvironments).map(async ([key, env]) => {
-          const conn_method = await fetchWithAuth(`${env.url}get_connect_method/`, {}, "get_connect_method")
+          const conn_method = await fetchWithAuth(`${env.url}/get_connect_method/`, {}, "get_connect_method")
           // Process credentials as needed
           return [key, { ...env, conn_method }]
         })
@@ -62,6 +66,11 @@ const EnvSettings = () => {
     }
   }
 
+  const showPopupWithMessage = (message, success) => {
+    setNotification(message)
+    setNotificationSuccess(success)
+  }
+
   const handleActivate = (environment) => {
     setEnv(environment)
   }
@@ -73,7 +82,7 @@ const EnvSettings = () => {
     }));
     setLoading(true)
     try {
-      const data = await fetchWithAuth(`${environments[environment].url}get_credentials/`, {}, 'get_credentials')
+      const data = await fetchWithAuth(`${environments[environment].url}/get_credentials/`, {}, 'get_credentials')
       setEnvCredentials((prevCredentials) => ({
         ...prevCredentials,
         [environment]: data // Set or update the specific environment key with the API result
@@ -93,18 +102,9 @@ const EnvSettings = () => {
     try {
       const envData = environments[environmentToDelete]
       if (envData?.isSaved) {
-        // Environment exists in the backend, delete it via API
-        await fetchWithAuth(
-          "/api/delete_env_url/",
-          {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ environment: environmentToDelete }),
-          },
-          'delete_env_url'
-        );
+        const newEnvironments = { ...environments };
+        delete newEnvironments[envName];
+        saveEnvironmentsToLocalStorage(newEnvironments);
 
         // Refresh environments after deletion
         await fetchAndSetEnvironments(fetchWithAuth, setEnvironments, setEnv, env);
@@ -131,21 +131,15 @@ const EnvSettings = () => {
   }
 
   const handleSave = async (environment, newUrl) => {
+    setSaving(true)
+    showPopupWithMessage("this will not display, it just to show the loading icon", true)
     try {
-      await fetchWithAuth(
-        '/api/add_env_url/',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ environment, url: newUrl }),
-        },
-        'add_env_url'
-      );
+      const updatedEnvironments = { ...environments };
+      updatedEnvironments[environment] = { url: newUrl };
+      saveEnvironmentsToLocalStorage(updatedEnvironments);
 
       await fetchWithAuth(
-        `${environments[environment].url}store_credentials/`,
+        `${newUrl}/store_credentials/`,
         {
           method: 'POST',
           headers: {
@@ -159,14 +153,17 @@ const EnvSettings = () => {
         'store_credentials'
       );
       fetchAndSetEnvironments(fetchWithAuth, setEnvironments, setEnv, env)
+      showPopupWithMessage("Connected successfully to backend", true)
       setEnvCredentials((prevCredentials) => ({
         ...prevCredentials,
         [environment]: {}
       }))
 
     } catch (error) {
-        console.error('Error fetching agent urls:', error)
+        console.error('Error adding the backend connection:', error)
+        showPopupWithMessage("Error adding the backend connection", false)
     }
+    setSaving(false)
   }
 
   const handleCredentialChange = (environment, credKey, credValue) => {
@@ -228,6 +225,14 @@ const EnvSettings = () => {
           </React.Fragment>
         ))}
       </div>
+      {notification && (
+        <NotificationPopup
+            message={notification}
+            status={notificationSuccess}
+            onClose={() => setNotification(null)}
+            loading={saving}
+        />
+      )}
       {showConfirmation && (
         <ConfirmationPopup
           message={`Are you sure you want to delete the ${environmentToDelete} environment?

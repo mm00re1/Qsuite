@@ -77,7 +77,7 @@ const HomePage = () => {
                 if (!environments[env] || !environments[env].url) {
                     return
                 }
-                const data = await fetchWithAuth( `${environments[env].url}test_groups/`, {}, "test_groups");
+                const data = await fetchWithAuth( `${environments[env].url}/test_groups/`, {}, "test_groups");
                 setTestGroupsFull(data);
                 const groupNames = data.map(group => group.name);
                 setTestGroups(groupNames);
@@ -98,7 +98,7 @@ const HomePage = () => {
                 if (!environments[env] || !environments[env].url) {
                     return
                 }
-                const data = await fetchWithAuth(`${environments[env].url}get_test_results_30_days/`, {}, 'get_test_results_30_days')
+                const data = await fetchWithAuth(`${environments[env].url}/get_test_results_30_days/`, {}, 'get_test_results_30_days')
                 if (data.length > 0) {
                     setTestResults(data)
                     setLastDay(data[data.length - 1].date)
@@ -128,7 +128,7 @@ const HomePage = () => {
                 setLoading(true)
                 // Fetch test results with error handling
                 const data = await fetchWithAuth(
-                    `${environments[env].url}get_test_results_30_days/?group_id=${selectedGroup.id}`,
+                    `${environments[env].url}/get_test_results_30_days/?group_id=${selectedGroup.id}`,
                     {},
                     'get_test_results_30_days',
                 );

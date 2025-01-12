@@ -23,7 +23,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
             if (!groupMissing) {
                 const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
                 const data = await fetchWithAuth(
-                    `${environments[env].url}all_functional_tests/?group_id=${groupId}&limit=10`,
+                    `${environments[env].url}/all_functional_tests/?group_id=${groupId}&limit=10`,
                     {},
                     'all_functional_tests',
                 );
@@ -48,7 +48,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
         const groupId = (testGroupsRef.current.find(testGroup => testGroup.name === groupRef.current)).id;
         try {
             const data = await fetchWithAuth(
-                `${environments[env].url}search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`,
+                `${environments[env].url}/search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`,
                 {},
                 'search_functional_tests',
             );

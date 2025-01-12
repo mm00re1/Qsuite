@@ -43,7 +43,7 @@ const Release = () => {
 
     async function fetchTestGroups(baseEnv) {
         try {
-            const data = await fetchWithAuth(`${environments[baseEnv].url}test_groups/`, {}, 'test_groups')
+            const data = await fetchWithAuth(`${environments[baseEnv].url}/test_groups/`, {}, 'test_groups')
             setTestGroups(data)
             setTestGroup(data.find(group => group.id === testGroupId).name)
         } catch (error) {
@@ -65,13 +65,13 @@ const Release = () => {
         try {
             if (baseEnv && targetEnv) {
                 const baseData = await fetchWithAuth(
-                    `${environments[baseEnv].url}get_tests_per_group/?group_id=${group_id}`,
+                    `${environments[baseEnv].url}/get_tests_per_group/?group_id=${group_id}`,
                     {},
                     'get_tests_per_group'
                 );
 
                 const targetData = await fetchWithAuth(
-                    `${environments[targetEnv].url}get_tests_per_group/?group_id=${group_id}`,
+                    `${environments[targetEnv].url}/get_tests_per_group/?group_id=${group_id}`,
                     {},
                     'get_tests_per_group',
                     handleTargetEnvFetchError
@@ -180,7 +180,7 @@ const Release = () => {
         async function fetchUniqueDates() {
             if (!globalDt) {
                 try {
-                    const data = await fetchWithAuth(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates');
+                    const data = await fetchWithAuth(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
                     if (data.latest_date) {
                         setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
                     } else {
@@ -200,7 +200,7 @@ const Release = () => {
         const formattedDate = selectedDate.replace(/\//g, '-'); 
         try {
             const data = await fetchWithAuth(
-                `${environments[env].url}get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
+                `${environments[env].url}/get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
                 {},
                 'get_tests_by_ids'
             )
@@ -317,7 +317,7 @@ const Release = () => {
         try {
             if (test["Release Status"] === "Deleted") {
                 await fetchWithAuth(
-                    `${environments[environmentTarget].url}delete_test_case/${test.test_case_id}/`,
+                    `${environments[environmentTarget].url}/delete_test_case/${test.test_case_id}/`,
                     {
                         method: 'DELETE',
                     },
@@ -325,7 +325,7 @@ const Release = () => {
                 );
             } else {
                 await fetchWithAuth(
-                    `${environments[environmentTarget].url}upsert_test_case/`,
+                    `${environments[environmentTarget].url}/upsert_test_case/`,
                     {
                         method: 'POST',
                         headers: {

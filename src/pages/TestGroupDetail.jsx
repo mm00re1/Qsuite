@@ -64,7 +64,7 @@ const TestGroupDetail = () => {
     useEffect(() => {
         async function fetchTestGroups() {
             try {
-                const data = await fetchWithAuth(`${environments[env].url}test_groups/`, {}, 'test_groups')
+                const data = await fetchWithAuth(`${environments[env].url}/test_groups/`, {}, 'test_groups')
                 setTestGroups(data)
                 setTestGroup(data.find(group => group.id === testGroupId).name)
             } catch (error) {
@@ -79,7 +79,7 @@ const TestGroupDetail = () => {
     useEffect(() => {
         async function fetchUniqueDates() {
             try {
-                const data = await fetchWithAuth(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates');
+                const data = await fetchWithAuth(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
@@ -117,7 +117,7 @@ const TestGroupDetail = () => {
         const formattedDate = selectedDate.replace(/\//g, '-');
         try {
             const data = await fetchWithAuth(
-                `${environments[env].url}get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`,
+                `${environments[env].url}/get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`,
                 {},
                 'get_test_group_stats'
             )
@@ -133,7 +133,7 @@ const TestGroupDetail = () => {
         setChartLoading(true)
         try {
             const data = await fetchWithAuth(
-                `${environments[env].url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
+                `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
                 {},
                 'get_test_results_by_day'
             )
@@ -151,7 +151,7 @@ const TestGroupDetail = () => {
         if (selectedDate) {
             try {
                 const data = await fetchWithAuth(
-                    `${environments[env].url}get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`,
+                    `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`,
                     {},
                     'get_test_results_by_day'
                 )
@@ -172,7 +172,7 @@ const TestGroupDetail = () => {
         const formattedDate = selectedDate.replace(/\//g, '-'); 
         try {
             const data = await fetchWithAuth(
-                `${environments[env].url}get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
+                `${environments[env].url}/get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
                 {},
                 'get_tests_by_ids'
             )
@@ -311,7 +311,7 @@ const TestGroupDetail = () => {
     const deleteTest = async (test) => {
         try {
             await fetchWithAuth(
-                `${environments[env].url}delete_test_case/${test.test_case_id}/`,
+                `${environments[env].url}/delete_test_case/${test.test_case_id}/`,
                 {
                     method: 'DELETE',
                 },

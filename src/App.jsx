@@ -17,6 +17,7 @@ import './App.css'
 import { useNavigation } from './TestNavigationContext'
 import { useAuth0 } from "@auth0/auth0-react"
 import { useAuthenticatedApi } from "./hooks/useAuthenticatedApi"
+import { loadEnvironmentsFromLocalStorage } from './utils/api'
 
 function App() {
   const { errorData, showError } = useError()
@@ -25,23 +26,19 @@ function App() {
   const { setEnv, setEnvironments } = useNavigation()
 
   useEffect(() => {
-    async function fetchAgentUrls() {
-        try {
-            const data = await fetchWithAuth("/api/get_agent_urls/", {}, "get_agent_urls")
-            const formattedEnvironments = Object.entries(data).reduce((acc, [key, value]) => {
-              acc[key] = { url: value, isEditing: false, isSaved: true }
-              return acc
-            }, {})
-            setEnvironments(formattedEnvironments)
-            const envOrder = ['DEV', 'TEST', 'PROD']
-            const orderedEnvs = envOrder.filter(e => formattedEnvironments.hasOwnProperty(e))
-            const env = orderedEnvs.length > 0 ? orderedEnvs[0] : ""
-            setEnv(env)
-            return formattedEnvironments  // Return for chaining
-        } catch (error) {
-            console.error('Error fetching agent urls:', error)
-            return {}
-        }
+    function fetchAgentUrls() {
+      // On mount, load from local storage
+      const envs = loadEnvironmentsFromLocalStorage();
+      const formattedEnvironments = Object.entries(envs).reduce((acc, [key, value]) => {
+        acc[key] = { url: value.url, isEditing: false, isSaved: true };
+        return acc;
+      }, {});
+      setEnvironments(formattedEnvironments)
+      const envOrder = ['DEV', 'TEST', 'PROD']
+      const orderedEnvs = envOrder.filter(e => formattedEnvironments.hasOwnProperty(e))
+      const env = orderedEnvs.length > 0 ? orderedEnvs[0] : ""
+      setEnv(env)
+      return formattedEnvironments  // Return for chaining
     }
 
     async function getKdbConnMethodFromEachEnv(formattedEnvironments) {
@@ -49,7 +46,7 @@ function App() {
         // Make second API call to each environment's URL
         const updatedEnvironments = await Promise.all(
           Object.entries(formattedEnvironments).map(async ([key, env]) => {
-            const conn_method = await fetchWithAuth(`${env.url}get_connect_method/`, {}, "get_credentials")
+            const conn_method = await fetchWithAuth(`${env.url}/get_connect_method/`, {}, "get_credentials")
             // Process credentials as needed
             return [key, { ...env, conn_method }]
           })
@@ -64,9 +61,16 @@ function App() {
       }
     }
 
+    async function init() {
+      if (!isLoading && isAuthenticated) {
+        const formattedEnvironments = fetchAgentUrls(); 
+        await getKdbConnMethodFromEachEnv(formattedEnvironments);
+      }
+    }
+  
+    init();
     if (!isLoading && isAuthenticated) {
-      fetchAgentUrls()
-        .then((formattedEnvironments) => getKdbConnMethodFromEachEnv(formattedEnvironments))
+      init()
         .catch((error) => console.error('Error in fetching URLs or credentials:', error))
     }
   }, [isLoading])

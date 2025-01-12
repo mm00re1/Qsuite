@@ -1,3 +1,28 @@
+
+// Helper function to load environments from localStorage
+export function loadEnvironmentsFromLocalStorage() {
+    try {
+        const storedData = localStorage.getItem('environments');
+        if (storedData) {
+        return JSON.parse(storedData);
+        }
+    } catch (error) {
+        console.error('Error parsing environments from localStorage:', error);
+        // If parsing fails, return empty object
+    }
+    return {};
+}
+
+// Helper function to save environments to localStorage
+export function saveEnvironmentsToLocalStorage(envs) {
+    try {
+        localStorage.setItem('environments', JSON.stringify(envs));
+    } catch (error) {
+        console.error('Error saving environments to localStorage:', error);
+        showError('localStorage_error', 'Failed to save environments locally.');
+    }
+}
+
 export async function fetchWithErrorHandling(url, options = {}, endpoint, handleError) {
     try {
         const response = await fetch(url, options);

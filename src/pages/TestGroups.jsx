@@ -38,7 +38,7 @@ const TestGroups = () => {
                 if (!environments[env] || !environments[env].url) {
                     return
                 }
-                const data = await fetchWithAuth(`${environments[env].url}get_unique_dates/`, {}, 'get_unique_dates');
+                const data = await fetchWithAuth(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
@@ -73,7 +73,7 @@ const TestGroups = () => {
             const results = {};
             for (const [envName, envData] of Object.entries(environments)) {
                 try {
-                    const data = await fetchWithAuth(`${envData.url}get_test_result_summary/?date=${formattedDate}`, {}, 'get_test_result_summary');
+                    const data = await fetchWithAuth(`${envData.url}/get_test_result_summary/?date=${formattedDate}`, {}, 'get_test_result_summary');
                     data.groups_data.forEach(group => {
                         if (!results[group.id]) {
                             results[group.id] = {}
@@ -124,7 +124,7 @@ const TestGroups = () => {
         showPopupWithMessage("this will not display, it just to show the loading icon", true)
         try {
             const data = await fetchWithAuth(
-                `${environments[environment].url}test_kdb_connection/`,
+                `${environments[environment].url}/test_kdb_connection/`,
                 {
                     method: 'POST',
                     headers: {
@@ -166,7 +166,7 @@ const TestGroups = () => {
             if (groupData[groupToDelete].hasOwnProperty(env)) {
                 try {
                     await fetchWithAuth(
-                        `${environments[env].url}delete_test_group/${groupToDelete}/`,
+                        `${environments[env].url}/delete_test_group/${groupToDelete}/`,
                         {
                             method: 'DELETE',
                         },
@@ -209,7 +209,7 @@ const TestGroups = () => {
 
         try {
             await fetchWithAuth(
-                `${environments[env].url}upsert_test_group/${groupId}/`,
+                `${environments[env].url}/upsert_test_group/${groupId}/`,
                 {
                     method: 'POST',
                     headers: {
