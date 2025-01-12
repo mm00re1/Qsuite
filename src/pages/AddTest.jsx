@@ -16,10 +16,7 @@ import KdbQueryStatus from '../components/KdbQueryStatus/KdbQueryStatus';
 import SearchTests from '../components/SearchTests/SearchTests';
 import SearchFunctionalTests from '../components/SearchFunctionalTests/SearchFunctionalTests';
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
-import { useError } from '../ErrorContext.jsx'
-import { useAuth0 } from "@auth0/auth0-react"
-import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
-
+import { useApi } from '../api/ApiContext'
 
 const AddTestPage = () => {
     const { env, environments } = useNavigation();
@@ -39,14 +36,13 @@ const AddTestPage = () => {
     const [loading, setLoading] = useState(false);
     const [isBaseEnv, setIsBaseEnv] = useState(false);
     const navigate = useNavigate();
-    const { showError } = useError()
-    const { isAuthenticated, isLoading } = useAuth0()
-    const { fetchWithAuth } = useAuthenticatedApi(showError)
+    const { fetchData, isAuthenticated, isLoading } = useApi()
+
 
     useEffect(() => {
         async function fetchTestGroups() {
             try {
-                const data = await fetchWithAuth(`${environments[env].url}/test_groups/`, {}, 'test_groups');
+                const data = await fetchData(`${environments[env].url}/test_groups/`, {}, 'test_groups');
                 setTestGroups(data);
             } catch (error) {
                 console.error('Error fetching test groups:', error);
@@ -82,13 +78,13 @@ const AddTestPage = () => {
             setLoading(true);
     
             if (!FreeForm) {
-                fetchPromise = fetchWithAuth(
+                fetchPromise = fetchData(
                     `${environments[env].url}/execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`,
                     {},
                     'execute_q_function'
                 );
             } else {
-                fetchPromise = fetchWithAuth(
+                fetchPromise = fetchData(
                     `${environments[env].url}/execute_q_code/`,
                     {
                         method: 'POST',
@@ -148,7 +144,7 @@ const AddTestPage = () => {
         };
     
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[env].url}/upsert_test_case/`,
                 {
                     method: 'POST',
@@ -189,7 +185,7 @@ const AddTestPage = () => {
         }
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[env].url}/view_test_code/?group_id=${groupId}&test_name=${newValue}`,
                 {},
                 'view_test_code'

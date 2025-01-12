@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
-import { useAuth0 } from '@auth0/auth0-react'
+import { useApi } from '../api/ApiContext'
 
 const Login = () => {
-  const { loginWithRedirect } = useAuth0()
+  const { loginWithRedirect } = useApi()
 
   useEffect(() => {
     // Use window.location.search to access query parameters

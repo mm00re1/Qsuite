@@ -16,8 +16,7 @@ import { useParams } from 'react-router-dom';
 import ReleaseEnvPipeline from '../components/ReleaseEnvPipeline'
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
 import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
-import { useAuth0 } from "@auth0/auth0-react"
-import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
+import { useApi } from '../api/ApiContext'
 
 const Release = () => {
     const { globalDt, setGlobalDt, env, environments } = useNavigation();
@@ -38,12 +37,12 @@ const Release = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [loading, setLoading] = useState(false);
     const { showError } = useError()
-    const { isAuthenticated, isLoading } = useAuth0()
-    const { fetchWithAuth } = useAuthenticatedApi(showError)
+    const { fetchData, isAuthenticated, isLoading } = useApi()
+
 
     async function fetchTestGroups(baseEnv) {
         try {
-            const data = await fetchWithAuth(`${environments[baseEnv].url}/test_groups/`, {}, 'test_groups')
+            const data = await fetchData(`${environments[baseEnv].url}/test_groups/`, {}, 'test_groups')
             setTestGroups(data)
             setTestGroup(data.find(group => group.id === testGroupId).name)
         } catch (error) {
@@ -64,13 +63,13 @@ const Release = () => {
     const fetchReleaseTests = async (group_id, baseEnv, targetEnv) => {
         try {
             if (baseEnv && targetEnv) {
-                const baseData = await fetchWithAuth(
+                const baseData = await fetchData(
                     `${environments[baseEnv].url}/get_tests_per_group/?group_id=${group_id}`,
                     {},
                     'get_tests_per_group'
                 );
 
-                const targetData = await fetchWithAuth(
+                const targetData = await fetchData(
                     `${environments[targetEnv].url}/get_tests_per_group/?group_id=${group_id}`,
                     {},
                     'get_tests_per_group',
@@ -180,7 +179,7 @@ const Release = () => {
         async function fetchUniqueDates() {
             if (!globalDt) {
                 try {
-                    const data = await fetchWithAuth(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
+                    const data = await fetchData(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
                     if (data.latest_date) {
                         setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
                     } else {
@@ -199,7 +198,7 @@ const Release = () => {
     const fetchTestsByIds = async (selectedDate, group_id, testIds) => {       
         const formattedDate = selectedDate.replace(/\//g, '-'); 
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[env].url}/get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
                 {},
                 'get_tests_by_ids'
@@ -316,7 +315,7 @@ const Release = () => {
 
         try {
             if (test["Release Status"] === "Deleted") {
-                await fetchWithAuth(
+                await fetchData(
                     `${environments[environmentTarget].url}/delete_test_case/${test.test_case_id}/`,
                     {
                         method: 'DELETE',
@@ -324,7 +323,7 @@ const Release = () => {
                     'delete_test_case'
                 );
             } else {
-                await fetchWithAuth(
+                await fetchData(
                     `${environments[environmentTarget].url}/upsert_test_case/`,
                     {
                         method: 'POST',

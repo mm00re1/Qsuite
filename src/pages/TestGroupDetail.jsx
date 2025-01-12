@@ -19,13 +19,11 @@ import TestGroupDetailChart from '../components/Charts/TestGroupDetailChart';
 import './TestGroupDetail.css';
 import SearchTests from '../components/SearchTests/SearchTests';
 import BackButton from '../components/BackButton/BackButton';
-import { useError } from '../ErrorContext.jsx'
 import { useParams } from 'react-router-dom'
 import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
-import { useAuth0 } from "@auth0/auth0-react"
-import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 import CircularProgress from '@mui/material/CircularProgress'
+import { useApi } from '../api/ApiContext'
 
 const TestGroupDetail = () => {
     const { globalDt, setGlobalDt, env, environments, deleteTestHistory } = useNavigation();
@@ -52,10 +50,8 @@ const TestGroupDetail = () => {
     const [notification, setNotification] = useState(null)
     const [notificationSuccess, setNotificationSuccess] = useState(true)
     const [isFinalEnv, setIsFinalEnv] = useState(false)
-    const { showError } = useError()
     const sortOptions = ["Failed", "Passed", "Time Taken"]
-    const { isAuthenticated, isLoading } = useAuth0()
-    const { fetchWithAuth } = useAuthenticatedApi(showError)
+    const { fetchData, isAuthenticated, isLoading } = useApi()
 
     useEffect(() => {
         deleteTestHistory()
@@ -63,8 +59,11 @@ const TestGroupDetail = () => {
 
     useEffect(() => {
         async function fetchTestGroups() {
+            if (!environments[env] || !environments[env].url) {
+                return;
+            }
             try {
-                const data = await fetchWithAuth(`${environments[env].url}/test_groups/`, {}, 'test_groups')
+                const data = await fetchData(`${environments[env].url}/test_groups/`, {}, 'test_groups')
                 setTestGroups(data)
                 setTestGroup(data.find(group => group.id === testGroupId).name)
             } catch (error) {
@@ -74,12 +73,16 @@ const TestGroupDetail = () => {
         if (!isLoading && isAuthenticated) {
             fetchTestGroups()
         }
-    }, [env, isLoading])
+    }, [env, isLoading, isAuthenticated, environments])
 
     useEffect(() => {
         async function fetchUniqueDates() {
+            if (!environments[env] || !environments[env].url) {
+                // If there's no environment set yet, just return.
+                return;
+            }
             try {
-                const data = await fetchWithAuth(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
+                const data = await fetchData(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
@@ -96,7 +99,7 @@ const TestGroupDetail = () => {
         if (!isLoading && isAuthenticated) {
             fetchUniqueDates()
         }
-    }, [globalDt,env,isLoading]);
+    }, [globalDt, env, isLoading, isAuthenticated, environments]);
 
     useEffect(() => {
         const envOrder = ['DEV', 'TEST', 'PROD']
@@ -111,12 +114,12 @@ const TestGroupDetail = () => {
             fetchExecutionTimes(globalDt, testGroupId)
             fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage, true, finalEnv)
         }
-    }, [testGroups,env,isLoading]);
+    }, [testGroups,env,isLoading,isAuthenticated]);
 
     const fetchGroupStats = async (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[env].url}/get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`,
                 {},
                 'get_test_group_stats'
@@ -132,7 +135,7 @@ const TestGroupDetail = () => {
         const formattedDate = selectedDate.replace(/\//g, '-');
         setChartLoading(true)
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
                 {},
                 'get_test_results_by_day'
@@ -150,7 +153,7 @@ const TestGroupDetail = () => {
 
         if (selectedDate) {
             try {
-                const data = await fetchWithAuth(
+                const data = await fetchData(
                     `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`,
                     {},
                     'get_test_results_by_day'
@@ -171,7 +174,7 @@ const TestGroupDetail = () => {
     const fetchTestsByIds = async (selectedDate, group_id, testIds) => {       
         const formattedDate = selectedDate.replace(/\//g, '-'); 
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[env].url}/get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
                 {},
                 'get_tests_by_ids'
@@ -310,7 +313,7 @@ const TestGroupDetail = () => {
 
     const deleteTest = async (test) => {
         try {
-            await fetchWithAuth(
+            await fetchData(
                 `${environments[env].url}/delete_test_case/${test.test_case_id}/`,
                 {
                     method: 'DELETE',

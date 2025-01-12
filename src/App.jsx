@@ -15,15 +15,15 @@ import { useError } from './ErrorContext.jsx'
 import ErrorBanner from './components/ErrorBanner/ErrorBanner'
 import './App.css'
 import { useNavigation } from './TestNavigationContext'
-import { useAuth0 } from "@auth0/auth0-react"
-import { useAuthenticatedApi } from "./hooks/useAuthenticatedApi"
 import { loadEnvironmentsFromLocalStorage } from './utils/api'
+import { useApi } from './api/ApiContext'
+//import { useAuth0 } from "@auth0/auth0-react"
+//import { useAuthenticatedApi } from "./hooks/useAuthenticatedApi"
 
 function App() {
-  const { errorData, showError } = useError()
-  const { fetchWithAuth } = useAuthenticatedApi(showError)
-  const { isAuthenticated, isLoading } = useAuth0()
+  const { errorData } = useError()
   const { setEnv, setEnvironments } = useNavigation()
+  const { fetchData, isAuthenticated, isLoading } = useApi()
 
   useEffect(() => {
     function fetchAgentUrls() {
@@ -46,7 +46,7 @@ function App() {
         // Make second API call to each environment's URL
         const updatedEnvironments = await Promise.all(
           Object.entries(formattedEnvironments).map(async ([key, env]) => {
-            const conn_method = await fetchWithAuth(`${env.url}/get_connect_method/`, {}, "get_credentials")
+            const conn_method = await fetchData(`${env.url}/get_connect_method/`, {}, "get_credentials")
             // Process credentials as needed
             return [key, { ...env, conn_method }]
           })
@@ -62,18 +62,18 @@ function App() {
     }
 
     async function init() {
-      if (!isLoading && isAuthenticated) {
+      //if (!isLoading && isAuthenticated) {
         const formattedEnvironments = fetchAgentUrls(); 
         await getKdbConnMethodFromEachEnv(formattedEnvironments);
-      }
+      //}
     }
   
-    init();
+    //init();
     if (!isLoading && isAuthenticated) {
       init()
         .catch((error) => console.error('Error in fetching URLs or credentials:', error))
     }
-  }, [isLoading])
+  }, [isLoading, isAuthenticated])
 
 
 

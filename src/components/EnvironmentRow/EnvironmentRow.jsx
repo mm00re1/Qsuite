@@ -10,7 +10,6 @@ import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
-import LockIcon from '@mui/icons-material/Lock'
 import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
 import Visibility from '@mui/icons-material/Visibility'
@@ -219,37 +218,7 @@ const EnvironmentRow = ({
                   }
               }}
           />
-          {(connMethod === "User/Password") ? (
-            <TextField
-              label="KDB Password"
-              variant="filled"
-              type={showPassword ? 'text' : 'password'}
-              value={envCredentials?.password || ""}
-              onChange={(e) => onCredentialChange('password', e.target.value)}
-              style={{
-                boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
-                minWidth: '250px',
-              }}
-              InputLabelProps={{
-                style: {
-                  fontFamily: 'Cascadia Code',
-                },
-              }}
-              InputProps={{
-                style: {
-                  backgroundColor: greyColor,
-                  fontFamily: 'Cascadia Code',
-                },
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={handleClickShowPassword} edge="end">
-                      {showPassword ? <Visibility /> : <VisibilityOff />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          ) : (
+          {(connMethod === "Oauth") ? (
             <>
             <TextField
                 label="Tenant ID"
@@ -323,6 +292,36 @@ const EnvironmentRow = ({
                 }}
               />
             </>
+          ) : (
+            <TextField
+              label="KDB Password"
+              variant="filled"
+              type={showPassword ? 'text' : 'password'}
+              value={envCredentials?.password || ""}
+              onChange={(e) => onCredentialChange('password', e.target.value)}
+              style={{
+                boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                minWidth: '250px',
+              }}
+              InputLabelProps={{
+                style: {
+                  fontFamily: 'Cascadia Code',
+                },
+              }}
+              InputProps={{
+                style: {
+                  backgroundColor: greyColor,
+                  fontFamily: 'Cascadia Code',
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={handleClickShowPassword} edge="end">
+                      {showPassword ? <Visibility /> : <VisibilityOff />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
           )}
         </div>
       )}

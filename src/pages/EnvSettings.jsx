@@ -6,9 +6,8 @@ import Header from '../components/Header/Header'
 import { useNavigation } from '../TestNavigationContext'
 import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
-import { useError } from '../ErrorContext.jsx'
-import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
 import { loadEnvironmentsFromLocalStorage, saveEnvironmentsToLocalStorage } from '../utils/api'
+import { useApi } from '../api/ApiContext'
 
 const EnvSettings = () => {
   const { env, setEnv, environments, setEnvironments } = useNavigation()
@@ -19,12 +18,12 @@ const EnvSettings = () => {
   const [saving, setSaving] = useState(false)
   const [notification, setNotification] = useState(null)
   const [notificationSuccess, setNotificationSuccess] = useState(true)
-  const { showError } = useError()
-  const { fetchWithAuth } = useAuthenticatedApi(showError)
+  const { fetchData } = useApi()
 
-  const connectionOptions = ["User/Password", "Azure Oauth"]
 
-  const fetchAndSetEnvironments = async (fetchWithAuth, setEnvironments, setEnv, env) => {
+  const connectionOptions = ["User/Password"]
+
+  const fetchAndSetEnvironments = async (fetchData, setEnvironments, setEnv, env) => {
     try {
       const envs = loadEnvironmentsFromLocalStorage();
       const formattedEnvironments = Object.entries(envs).reduce((acc, [key, value]) => {
@@ -34,7 +33,7 @@ const EnvSettings = () => {
 
       const updatedEnvironments = await Promise.all(
         Object.entries(formattedEnvironments).map(async ([key, env]) => {
-          const conn_method = await fetchWithAuth(`${env.url}/get_connect_method/`, {}, "get_connect_method")
+          const conn_method = await fetchData(`${env.url}/get_connect_method/`, {}, "get_connect_method")
           // Process credentials as needed
           return [key, { ...env, conn_method }]
         })
@@ -82,7 +81,7 @@ const EnvSettings = () => {
     }));
     setLoading(true)
     try {
-      const data = await fetchWithAuth(`${environments[environment].url}/get_credentials/`, {}, 'get_credentials')
+      const data = await fetchData(`${environments[environment].url}/get_credentials/`, {}, 'get_credentials')
       setEnvCredentials((prevCredentials) => ({
         ...prevCredentials,
         [environment]: data // Set or update the specific environment key with the API result
@@ -107,7 +106,7 @@ const EnvSettings = () => {
         saveEnvironmentsToLocalStorage(newEnvironments);
 
         // Refresh environments after deletion
-        await fetchAndSetEnvironments(fetchWithAuth, setEnvironments, setEnv, env);
+        await fetchAndSetEnvironments(fetchData, setEnvironments, setEnv, env);
       } else {
         // Environment is only in local state, remove it directly
         setEnvironments((prevEnvironments) => {
@@ -138,7 +137,7 @@ const EnvSettings = () => {
       updatedEnvironments[environment] = { url: newUrl };
       saveEnvironmentsToLocalStorage(updatedEnvironments);
 
-      await fetchWithAuth(
+      await fetchData(
         `${newUrl}/store_credentials/`,
         {
           method: 'POST',
@@ -152,7 +151,7 @@ const EnvSettings = () => {
         },
         'store_credentials'
       );
-      fetchAndSetEnvironments(fetchWithAuth, setEnvironments, setEnv, env)
+      fetchAndSetEnvironments(fetchData, setEnvironments, setEnv, env)
       showPopupWithMessage("Connected successfully to backend", true)
       setEnvCredentials((prevCredentials) => ({
         ...prevCredentials,

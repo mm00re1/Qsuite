@@ -2,8 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Autocomplete, TextField, CircularProgress, Box, Typography } from '@mui/material'
 import debounce from 'lodash.debounce'
 import { useNavigation } from '../../TestNavigationContext'
-import { useError } from '../../ErrorContext.jsx'
-import { useAuthenticatedApi } from "../../hooks/useAuthenticatedApi"
+import { useApi } from '../../api/ApiContext'
 
 const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChange, message, groupMissing, setMessage, setTestStatus }) => {
     const { env, environments } = useNavigation()
@@ -12,8 +11,8 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
     const [loading, setLoading] = useState(false);
     const groupRef = useRef(group);
     const testGroupsRef = useRef(testGroups);
-    const { showError } = useError()
-    const { fetchWithAuth } = useAuthenticatedApi(showError)
+    const { fetchData } = useApi()
+
 
     async function fetchTestNames() {
         try {
@@ -22,7 +21,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
 
             if (!groupMissing) {
                 const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
-                const data = await fetchWithAuth(
+                const data = await fetchData(
                     `${environments[env].url}/all_functional_tests/?group_id=${groupId}&limit=10`,
                     {},
                     'all_functional_tests',
@@ -47,7 +46,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
         setLoading(true);
         const groupId = (testGroupsRef.current.find(testGroup => testGroup.name === groupRef.current)).id;
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[env].url}/search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`,
                 {},
                 'search_functional_tests',

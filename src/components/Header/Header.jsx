@@ -3,18 +3,18 @@ import { AppBar, Toolbar, Typography, Box } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import MenuDropdown from '../MenuDropdown'
 import QsuiteLogo from '../../../assets/qsuite_logo.svg?react'
-import { useAuth0 } from "@auth0/auth0-react";
+import { useApi } from '../../api/ApiContext'
 
 
 const LoginButton = () => {
-  const { loginWithRedirect } = useAuth0();
+  const { loginWithRedirect } = useApi();
 
   return <button style={{ padding: '5px' }} onClick={() => loginWithRedirect()}>Log In</button>;
 };
 
 const Header = () => {
   const navigate = useNavigate()
-  const { isAuthenticated, logout } = useAuth0()
+  const { isAuthenticated, logout, enableAuth } = useApi();
 
   const menuItems = [
     {
@@ -33,10 +33,11 @@ const Header = () => {
       name: 'Log out',
       onChange: () => logout({ logoutParams: { returnTo: window.location.origin } })
     }] : [])*/
-    {
+     // We'll conditionally include "Log out" only if auth is enabled:
+    ...(enableAuth ? [{
       name: 'Log out',
       onChange: () => logout({ logoutParams: { returnTo: window.location.origin } })
-    }
+    }] : [])
   ];
 
   const handleTitleClick = () => {
@@ -75,7 +76,8 @@ const Header = () => {
           </Typography>
         </Box>
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', cursor: 'pointer' }}>
-          {!isAuthenticated && (<LoginButton />)}
+          {/* If auth is disabled, hide login button. If auth is enabled but user is not authenticated, show login. */}
+          {enableAuth && !isAuthenticated && <LoginButton />}
           <div style={{ width: '40px' }} />
           <MenuDropdown menuItems={menuItems} />
         </Box>

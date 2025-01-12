@@ -6,14 +6,11 @@ import { DatePicker } from '@mui/x-date-pickers'
 import dayjs from 'dayjs'
 import { useNavigation } from '../TestNavigationContext'
 import './TestGroups.css'
-import { useError } from '../ErrorContext.jsx'
 import TestGroupRow from '../components/TestGroupRow/TestGroupRow'
 import NewTestGroupRow from '../components/NewTestGroupRow'
 import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
 import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
-import { useAuth0 } from "@auth0/auth0-react"
-import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi"
-
+import { useApi } from '../api/ApiContext'
 
 const TestGroups = () => {
     const { env, environments, globalDt, setGlobalDt, groupData, setGroupData } = useNavigation()
@@ -28,9 +25,8 @@ const TestGroups = () => {
     const [groupToDelete, setGroupToDelete] = useState(null);
     const [isFinalEnv, setIsFinalEnv] = useState(false);
     const navigate = useNavigate();
-    const { showError } = useError()
-    const { isAuthenticated, isLoading } = useAuth0()
-    const { fetchWithAuth } = useAuthenticatedApi(showError)
+    const { fetchData, isAuthenticated, isLoading } = useApi()
+
 
     useEffect(() => {
         async function fetchUniqueDates() {
@@ -38,7 +34,7 @@ const TestGroups = () => {
                 if (!environments[env] || !environments[env].url) {
                     return
                 }
-                const data = await fetchWithAuth(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
+                const data = await fetchData(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
                 setStartDate(dayjs(data.start_date));
                 setLatestDate(dayjs(data.latest_date));
                 const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
@@ -73,7 +69,7 @@ const TestGroups = () => {
             const results = {};
             for (const [envName, envData] of Object.entries(environments)) {
                 try {
-                    const data = await fetchWithAuth(`${envData.url}/get_test_result_summary/?date=${formattedDate}`, {}, 'get_test_result_summary');
+                    const data = await fetchData(`${envData.url}/get_test_result_summary/?date=${formattedDate}`, {}, 'get_test_result_summary');
                     data.groups_data.forEach(group => {
                         if (!results[group.id]) {
                             results[group.id] = {}
@@ -123,7 +119,7 @@ const TestGroups = () => {
         setLoading(true);
         showPopupWithMessage("this will not display, it just to show the loading icon", true)
         try {
-            const data = await fetchWithAuth(
+            const data = await fetchData(
                 `${environments[environment].url}/test_kdb_connection/`,
                 {
                     method: 'POST',
@@ -165,7 +161,7 @@ const TestGroups = () => {
         for (const env in groupData[groupToDelete]) {
             if (groupData[groupToDelete].hasOwnProperty(env)) {
                 try {
-                    await fetchWithAuth(
+                    await fetchData(
                         `${environments[env].url}/delete_test_group/${groupToDelete}/`,
                         {
                             method: 'DELETE',
@@ -208,7 +204,7 @@ const TestGroups = () => {
         }
 
         try {
-            await fetchWithAuth(
+            await fetchData(
                 `${environments[env].url}/upsert_test_group/${groupId}/`,
                 {
                     method: 'POST',

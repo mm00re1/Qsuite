@@ -8,12 +8,10 @@ import CustomButton from '../components/CustomButton/CustomButton';
 import TestRunChart from '../components/Charts/TestRunChart';
 import './HomePage.css';
 import { useNavigation } from '../TestNavigationContext'
-import { useError } from '../ErrorContext.jsx';
 import Header from '../components/Header/Header'
 import StatusCard from '../components/StatusCard'
 import CircularProgress from '@mui/material/CircularProgress'
-import { useAuth0 } from "@auth0/auth0-react";
-import { useAuthenticatedApi } from "../hooks/useAuthenticatedApi";
+import { useApi } from '../api/ApiContext'
 
   
 const HomePage = () => {
@@ -29,9 +27,8 @@ const HomePage = () => {
     const [loading, setLoading] = useState(false);
     const [lastDay, setLastDay] = useState("")
     const navigate = useNavigate()
-    const { showError } = useError()
-    const { fetchWithAuth } = useAuthenticatedApi(showError);
-    const { isAuthenticated, isLoading } = useAuth0();
+    const { fetchData, isAuthenticated, isLoading } = useApi()
+
 
     /*useEffect(() => {
         // Add the class to body when the component mounts
@@ -77,7 +74,7 @@ const HomePage = () => {
                 if (!environments[env] || !environments[env].url) {
                     return
                 }
-                const data = await fetchWithAuth( `${environments[env].url}/test_groups/`, {}, "test_groups");
+                const data = await fetchData( `${environments[env].url}/test_groups/`, {}, "test_groups");
                 setTestGroupsFull(data);
                 const groupNames = data.map(group => group.name);
                 setTestGroups(groupNames);
@@ -98,7 +95,7 @@ const HomePage = () => {
                 if (!environments[env] || !environments[env].url) {
                     return
                 }
-                const data = await fetchWithAuth(`${environments[env].url}/get_test_results_30_days/`, {}, 'get_test_results_30_days')
+                const data = await fetchData(`${environments[env].url}/get_test_results_30_days/`, {}, 'get_test_results_30_days')
                 if (data.length > 0) {
                     setTestResults(data)
                     setLastDay(data[data.length - 1].date)
@@ -127,7 +124,7 @@ const HomePage = () => {
             try {
                 setLoading(true)
                 // Fetch test results with error handling
-                const data = await fetchWithAuth(
+                const data = await fetchData(
                     `${environments[env].url}/get_test_results_30_days/?group_id=${selectedGroup.id}`,
                     {},
                     'get_test_results_30_days',

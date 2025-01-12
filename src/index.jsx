@@ -1,11 +1,12 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
-import { ErrorProvider } from './ErrorContext.jsx';
-import { Auth0Provider } from '@auth0/auth0-react';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import './index.css'
+import App from './App'
+import reportWebVitals from './reportWebVitals'
+import { ErrorProvider } from './ErrorContext.jsx'
+import { Auth0Provider } from '@auth0/auth0-react'
 import { NavigationProvider } from './TestNavigationContext'
+import ApiProviderBridge from './ApiProviderBridge'
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -21,7 +22,9 @@ root.render(
     >
       <ErrorProvider>
         <NavigationProvider>
-          <App />
+          <ApiProviderBridge>
+            <App />
+          </ApiProviderBridge>
         </NavigationProvider>
       </ErrorProvider>
     </Auth0Provider>
