@@ -4,7 +4,7 @@ import debounce from 'lodash.debounce'
 import { useNavigation } from '../../TestNavigationContext'
 import { useApi } from '../../api/ApiContext'
 
-const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChange, message, groupMissing, setMessage, setTestStatus }) => {
+const SearchFunctionalTests = ({ selectedTest, all_tests, search_tests, group, testGroups, handleTestChange, message, groupMissing, setMessage, setTestStatus }) => {
     const { env, environments } = useNavigation()
     const [testNames, setTestNames] = useState([]);
     const [testInputValue, setTestInputValue] = useState('');
@@ -22,9 +22,9 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
             if (!groupMissing) {
                 const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
                 const data = await fetchData(
-                    `${environments[env].url}/all_functional_tests/?group_id=${groupId}&limit=10`,
+                    `${environments[env].url}/${all_tests}/?group_id=${groupId}&limit=10`,
                     {},
-                    'all_functional_tests',
+                    all_tests,
                 );
                 if (data.success) {
                     setTestNames(data.results)
@@ -47,9 +47,9 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
         const groupId = (testGroupsRef.current.find(testGroup => testGroup.name === groupRef.current)).id;
         try {
             const data = await fetchData(
-                `${environments[env].url}/search_functional_tests/?group_id=${groupId}&query=${inputValue}&limit=10`,
+                `${environments[env].url}/${search_tests}/?group_id=${groupId}&query=${inputValue}&limit=10`,
                 {},
-                'search_functional_tests',
+                search_tests,
             );
             if (data.success) {
                 setTestNames(data.results)
@@ -58,7 +58,7 @@ const SearchFunctionalTests = ({ selectedTest, group, testGroups, handleTestChan
                 setMessage(data.message)
             }
         } catch (error) {
-            console.error('Error fetching functional tests:', error);
+            console.error('Error fetching matching tests:', error);
         }
         setLoading(false);
     };

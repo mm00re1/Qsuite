@@ -17,8 +17,6 @@ import './App.css'
 import { useNavigation } from './TestNavigationContext'
 import { loadEnvironmentsFromLocalStorage } from './utils/api'
 import { useApi } from './api/ApiContext'
-//import { useAuth0 } from "@auth0/auth0-react"
-//import { useAuthenticatedApi } from "./hooks/useAuthenticatedApi"
 
 function App() {
   const { errorData } = useError()
