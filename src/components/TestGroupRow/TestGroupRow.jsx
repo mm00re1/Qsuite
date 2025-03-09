@@ -68,6 +68,7 @@ const TestGroupRow = ({
     const handleInputChange = (env, field, value) => {
         const newGroupData = { ...groupData }
         newGroupData[env][field] = value
+        console.log("newGroupData: ", newGroupData)
         setGroupData(newGroupData)
     }
 
@@ -162,10 +163,12 @@ const TestGroupRow = ({
                             <GroupForm
                                 key={env}
                                 env={env}
+                                connMethod={environments[env].conn_method}
                                 machine={groupData[env].Machine}
                                 port={groupData[env].Port}
                                 schedule={groupData[env].Scheduled}
                                 tls={groupData[env].TLS}
+                                scope={groupData[env].Scope}
                                 onChange={(field, value) => handleInputChange(env, field, value)}
                                 onEdit={() => handleEditClick(env)}
                                 onTestConnect={() => handleTestConnect(env,groupData[env])}

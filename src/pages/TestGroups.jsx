@@ -99,7 +99,8 @@ const TestGroups = () => {
             Machine: '',
             Port: '',
             Scheduled: '',
-            TLS: false
+            TLS: false,
+            Scope: ''
         };        
         setNewGroupData(environments.DEV ? { DEV: { ...newFormData } } : {})
     };
@@ -129,7 +130,8 @@ const TestGroups = () => {
                     body: JSON.stringify({
                         server: testData.Machine,
                         port: testData.Port,
-                        tls: testData.TLS
+                        tls: testData.TLS,
+                        scope: testData.Scope
                     }),
                 },
                 'test_kdb_connection'
@@ -217,7 +219,8 @@ const TestGroups = () => {
                         server: data.Machine,
                         port: data.Port,
                         schedule: data.Scheduled,
-                        tls: data.TLS
+                        tls: data.TLS,
+                        scope: data.Scope
                     }),
                 },
                 'upsert_test_group'
@@ -233,7 +236,8 @@ const TestGroups = () => {
                         Machine: data.Machine,
                         Port: data.Port,
                         Scheduled: data.Scheduled,
-                        TLS: data.TLS
+                        TLS: data.TLS,
+                        Scope: data.Scope
                     }
                 }
             }))

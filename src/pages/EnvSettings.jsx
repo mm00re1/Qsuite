@@ -21,7 +21,7 @@ const EnvSettings = () => {
   const { fetchData } = useApi()
 
 
-  const connectionOptions = ["User/Password"]
+  const connectionOptions = ["User/Password", "Azure Oauth"]
 
   const fetchAndSetEnvironments = async (fetchData, setEnvironments, setEnv, env) => {
     try {

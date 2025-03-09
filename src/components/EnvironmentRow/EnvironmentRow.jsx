@@ -218,7 +218,7 @@ const EnvironmentRow = ({
                   }
               }}
           />
-          {(connMethod === "Oauth") ? (
+          {(connMethod === "Azure Oauth") ? (
             <>
             <TextField
                 label="Tenant ID"
