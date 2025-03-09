@@ -18,12 +18,17 @@ import BackButton from '../components/BackButton/BackButton';
 import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
 import CustomSwitchButton from '../components/CustomButton/CustomSwitchButton';
 import SearchTests from '../components/SearchTests/SearchTests';
+import { subscribeToKdb } from '../utils/websocketHelper'
+import DataFrameTable from '../components/KdbDataDisplay/DataFrameTable';
+import QDictionaryTable from '../components/KdbDataDisplay/QDictionaryTable';
+import Tooltip from '@mui/material/Tooltip'
+import DeleteIcon from '@mui/icons-material/Delete'
 import './AddTest.css'
 //import { useTestData } from '../contexts/TestDataContext'
 import { useApi } from '../api/ApiContext'
 
   const TestDetail = () => {
-    const { groupId, testId, date } = useParams();
+    const { groupId, testResultId, date } = useParams();
     const { env, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
 
     const [name, setName] = React.useState('');
@@ -39,29 +44,33 @@ import { useApi } from '../api/ApiContext'
     const [columnList, setColumnList] = useState([]);
     const [tableData, setTableData] = useState([]);
     const [showingStatusHistory, setShowingStatusHistory] = useState(true);
-    const [FreeForm, setFreeForm] = useState(true);
+    const [testType, setTestType] = useState("Free-Form");
     const [functionalTest, setFunctionalTest] = useState('');
     const [testCode, setTestCode] = useState(['']);
     const [loading, setLoading] = useState(false);
     const [isBaseEnv, setIsBaseEnv] = useState(false);
+    const [numberOfMessages, setNumberOfMessages] = useState('1');
+    const [subTimeout, setSubTimeout] = useState('30');
+    const [subParams, setSubParams] = useState([]);
+    const [subscriptionTest, setSubscriptionTest] = useState(null);
     const navigate = useNavigate();
     const { fetchData, isAuthenticated, isLoading } = useApi()
 
 
-    const fetchTestData = async (date, testId, testGroupsData) => {
+    const fetchTestData = async (date, testResId, testGroupsData) => {
         const formattedDate = date.replace(/\//g, '-');
-        const testData = await fetchData(`${environments[env].url}/get_test_info/?date=${formattedDate}&test_id=${testId}`, {}, 'get_test_info')
+        const testData = await fetchData(`${environments[env].url}/get_test_info/?date=${formattedDate}&test_result_id=${testResId}`, {}, 'get_test_info')
         setTestData(testData);
         setGroup(testData.group_name);
         setName(testData.test_name);
-        setFreeForm(testData.free_form);
+        setTestType(testData.test_type);
         setLinkedTests(testData.dependent_tests);
-        setLines(testData.test_code.split('\n\n'));
-        setFunctionalTest(testData.free_form ? '' : testData.test_code);
         setColumnList(testData.dependent_tests_columns);
         setTableData(testData.dependent_tests);
-
-        if (!testData.free_form) {
+        if (testData.test_type === "Free-Form") {
+            setLines(testData.test_code.split('\n\n'));
+        } else if (testData.test_type === "Functional") {
+            setFunctionalTest((testData.test_type === "Functional") ? testData.test_code : '');
             const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
             const testCodeData = await fetchData(`${environments[env].url}/view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code')
             if (testCodeData.success) {
@@ -70,25 +79,30 @@ import { useApi } from '../api/ApiContext'
                 setTestStatus(false)
                 setMessage(testCodeData.message)
             }
+        } else if (testData.test_type === "Subscription") {
+            let parsedData = JSON.parse(testData.test_code)
+            console.log("parsedData: ",parsedData)
+            setSubParams(parsedData.subParams)
+            setSubscriptionTest(parsedData.subscriptionTest)
+            setNumberOfMessages(parsedData.numberOfMessages)
+            setSubTimeout(parsedData.subTimeout)
         }
     };
 
-    const fetchTestGroupsAndData = async (date, testId) => {
+    const fetchTestGroupsAndData = async (date, testResId) => {
         try {
             const testGroupsData = await fetchData(`${environments[env].url}/test_groups/`, {}, 'test_groups');
             setTestGroups(testGroupsData);
-            if (date && testId) {
-                await fetchTestData(date, testId, testGroupsData);
+            console.log("date: ", date)
+            console.log("testResId: ",testResId)
+            if (date && testResId) {
+                await fetchTestData(date, testResId, testGroupsData);
             }
         } catch (error) {
             console.error('Error fetching test data:', error);
         }
     };
 
-    const addTestToContext = (testId) => {
-        addTestToHistory(testId);
-    };
-    
     useEffect(() => {
         // order environments in the order ['DEV', 'TEST', 'PROD'] and then set isBaseEnv to true if the current env is the first one
         const envOrder = ['DEV', 'TEST', 'PROD'];
@@ -96,14 +110,14 @@ import { useApi } from '../api/ApiContext'
         const baseEnv = orderedEnvs[0] === env;
         setIsBaseEnv(baseEnv);
         if (!isLoading && isAuthenticated) {
-            fetchTestGroupsAndData(date, testId);
-            addTestToHistory(testId);
+            fetchTestGroupsAndData(date, testResultId);
+            addTestToHistory(testResultId);
         }
-    }, [testId, date, env, isLoading]);
+    }, [testResultId, date, env, isLoading]);
 
-    const handleTestNameClick = (test_case_id, dt) => {
-        addTestToHistory(testId);
-        navigate(`/testdetail/${groupId}/${test_case_id}/${dt}`)
+    const handleTestNameClick = (test_result_id, dt) => {
+        addTestToHistory(testResultId);
+        navigate(`/testdetail/${groupId}/${test_result_id}/${dt}`)
     };
 
     const goToPrevTestPage = () => {
@@ -126,17 +140,18 @@ import { useApi } from '../api/ApiContext'
     };
 
     const executeCode = async () => {
+        setShowResponse(false)
         let fetchPromise;
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
 
         try {
             setLoading(true);
-            if (!FreeForm) {
+            if (testType === "Functional") {
                 fetchPromise = fetchData(
                     `${environments[env].url}/execute_q_function/?group_id=${groupId}&test_name=${functionalTest}`),
                     {},
                     'execute_q_function'
-            } else {
+                } else if (testType === "Free-Form") {
                 fetchPromise = fetchData(
                     `${environments[env].url}/execute_q_code/`,
                     {
@@ -148,24 +163,68 @@ import { useApi } from '../api/ApiContext'
                     },
                     'execute_q_code'
                 );
+            } else if (testType === "Subscription") {
+                // We'll call our helper to open the WebSocket and wait.
+                const wsResult = await subscribeToKdb(
+                  environments[env].url, // baseUrl
+                  groupId,
+                  subParams,
+                  numberOfMessages,
+                  subTimeout,
+                  onMessageHandler,
+                  subscriptionTest
+                );
+          
+                // Mimic how you handle the fetch response
+                setTestStatus(wsResult.success);
+                setMessage(wsResult.message);
+                // Once done, we return here (or continue logic).
+                return;
             }
     
             const data = await fetchPromise;
             setTestStatus(data.success);
             setMessage(data.message); // Update the message state
-            setResponse(data.data); // Update the data state
             setShowResponse(data.data.length > 0);
+            if (data.type === "dataframe") {
+                // response.data might look like { columns: [...], rows: [...] }
+                setResponse({
+                type: "dataframe",
+                columns: data.data.columns,
+                rows: data.data.rows,
+                trimmed: data.data.trimmed,
+                num_rows: data.data.num_rows,
+                use_flash: false
+                });
+            } else {
+                setResponse({
+                type: data.type,
+                data: data.data
+                });
+            }
         } catch (error) {
             console.error('Error:', error);
             setTestStatus(false);
             setMessage('Failed to execute code.');
-            setResponse([]);
+            setResponse(null);
             setShowResponse(false);
         } finally {
             setLoading(false);
         }
     };
-    
+   
+    const onMessageHandler = (wsMessage) => {
+        setShowResponse(true)
+        setResponse({
+            type: "dataframe",
+            columns: wsMessage.columns,
+            rows: wsMessage.rows,
+            trimmed: wsMessage.trimmed,
+            num_rows: wsMessage.num_rows,
+            use_flash: true
+        })
+    }
+
     const editTest = async () => {
         setShowResponse(false)
         // Check if any of the fields are empty
@@ -186,13 +245,31 @@ import { useApi } from '../api/ApiContext'
             return;
         }
 
+        let test_code_formatted = "";
+        if (testType === "Functional") {
+                test_code_formatted = functionalTest
+
+        } else if (testType === "Free-Form") {
+            test_code_formatted = lines.join('\n\n')
+
+        } else if (testType === "Subscription") {
+            const config = {
+                // The inputs you need for your subscription
+                subParams,
+                subscriptionTest,
+                numberOfMessages,
+                subTimeout
+            };
+            test_code_formatted = JSON.stringify(config)
+        }
+
         const editedTestData = {
             group_id: selectedGroup.id, // Use the ID instead of the name
             test_name: name,
             id: testData.id,
-            test_code: FreeForm ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
-            dependencies: Object.values(linkedTests).map(test => test.test_case_id),
-            free_form: FreeForm
+            test_type: testType, // "Functional" | "Free-Form" | "Subscription"
+            test_code: test_code_formatted,
+            dependencies: Object.values(linkedTests).map(test => test.test_case_id)
         };
         
         try {
@@ -200,9 +277,7 @@ import { useApi } from '../api/ApiContext'
                 `${environments[env].url}/upsert_test_case/`,
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(editedTestData),
                 },
                 'upsert_test_case' // Endpoint identifier for error handling
@@ -234,6 +309,22 @@ import { useApi } from '../api/ApiContext'
     const handleSwitchClick = () => {
         setShowingStatusHistory(!showingStatusHistory);
     };
+
+    const handleAddSubParam = () => {
+        setSubParams((oldSubParams) => [...oldSubParams, ''])
+      }
+
+    const handleSubParamChange = (index, value) => {
+        const newParams = [...subParams];
+        newParams[index] = value;
+        setSubParams(newParams);
+    }
+
+    const handleRemoveSubParam = (indexToRemove) => {
+        setSubParams((oldParams) => 
+          oldParams.filter((_, idx) => idx !== indexToRemove)
+        );
+    }
 
     return (
         <>
@@ -370,10 +461,10 @@ import { useApi } from '../api/ApiContext'
                     )}
                 </div>
             )}
-            {(FreeForm) && (
+            {(testType === "Free-Form") && (
                 <CodeTerminal lines={lines} onLinesChange={setLines} />
             )}
-            {(!FreeForm) && (
+            {(testType === "Functional") && (
                 <>
                 <div style={{marginLeft: '5%' }}>
                     <TextField
@@ -401,6 +492,130 @@ import { useApi } from '../api/ApiContext'
                 <CodeDisplay lines={testCode} />
                 </>
             )}
+            {(testType === "Subscription") && (
+                <>
+                <div style={{ marginLeft: '5%', display: 'flex', gap: '20px' }}>
+                    <TextField
+                        label="q Subscription"
+                        variant="filled"
+                        value={subscriptionTest}
+                        disabled
+                        style={{
+                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                            minWidth: '250px'
+                        }}
+                        InputLabelProps={{
+                            style: {
+                                fontFamily: 'Cascadia Code', // Set the font family of the label text
+                            }
+                        }}
+                        InputProps={{
+                            style: {
+                                backgroundColor: 'white',
+                                fontFamily: 'Cascadia Code',
+                            }
+                        }}
+                    />
+                    <TextField
+                        label="Number of messages"
+                        variant="filled"
+                        type="number"
+                        value={numberOfMessages}
+                        onChange={(e) => setNumberOfMessages(e.target.value)}
+                        InputProps={{
+                            inputProps: { min: 1 }, // restrict to non-negative
+                            style: {
+                            backgroundColor: 'white',
+                            fontFamily: 'Cascadia Code',
+                            },
+                        }}
+                        InputLabelProps={{
+                            style: { fontFamily: 'Cascadia Code' },
+                        }}
+                        style={{
+                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                            minWidth: '250px',
+                            maxHeight: '56px'
+                        }}
+                    />
+                    <TextField
+                        label="Timeout (sec)"
+                        variant="filled"
+                        type="number"
+                        value={subTimeout}
+                        onChange={(e) => setSubTimeout(e.target.value)}
+                        InputProps={{
+                            inputProps: { min: 0, max: 300 }, // restrict to non-negative
+                            style: {
+                            backgroundColor: 'white',
+                            fontFamily: 'Cascadia Code',
+                            },
+                        }}
+                        InputLabelProps={{
+                            style: { fontFamily: 'Cascadia Code' },
+                        }}
+                        style={{
+                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                            minWidth: '250px',
+                            maxHeight: '56px'
+                        }}
+                    />
+                </div>
+                <div style={{ marginLeft: '7%', marginTop: '20px' }}>
+                    {subParams.map((param, index) => (
+                        <div 
+                            key={index}
+                            style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            maxHeight: '57px', 
+                            marginBottom: '5px',
+                            gap: '8px', // adds a small space between TextField and icon 
+                            }}
+                        >
+                        <TextField
+                          label={`Param ${index + 1}`}
+                          variant="filled"
+                          value={param}
+                          onChange={(e) => handleSubParamChange(index, e.target.value)}
+                          style={{
+                            boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                            minWidth: '250px',
+                          }}
+                          InputLabelProps={{
+                            style: {
+                              fontFamily: 'Cascadia Code', 
+                            },
+                          }}
+                          InputProps={{
+                            style: {
+                              backgroundColor: 'white',
+                              fontFamily: 'Cascadia Code',
+                            },
+                          }}
+                        />
+                        <Tooltip title="Delete Param" arrow>
+                          <DeleteIcon
+                            onClick={() => handleRemoveSubParam(index)}
+                            style={{
+                              cursor: 'pointer',
+                              fontSize: '26px',
+                            }}
+                          />
+                        </Tooltip>
+                      </div>
+                    ))}
+                    <CustomButton 
+                        height={0.7} 
+                        width={0.8} 
+                        onClick={handleAddSubParam}
+                        >
+                        + Param
+                    </CustomButton>
+                </div>
+                </>
+            )}
+
             <div style={{ marginLeft: '5%', marginBottom: '20px'}}>
                 <KdbQueryStatus
                     queryStatus={testStatus}
@@ -424,7 +639,15 @@ import { useApi } from '../api/ApiContext'
                         boxShadow: '0px 24px 36px rgba(0, 0, 0, 0.2)',
                         }}
                 >
-                    {JSON.stringify(response, null, 2)}
+                    {response.type === "dictionary" && (
+                        <QDictionaryTable data={response.data} />
+                    )}
+                    {response && response.type === "dataframe" && (
+                        <DataFrameTable columns={response.columns} rows={response.rows} trimmed={response.trimmed} numRows={response.num_rows} useFlash={response.use_flash} />
+                    )}
+                    {response && response.type === "string" && (
+                        JSON.stringify(response.data, null, 2)
+                    )}
                 </div>
             )}
             <div className="actionButtons">

@@ -20,94 +20,11 @@ import { useApi } from '../api/ApiContext'
 import { subscribeToKdb } from '../utils/websocketHelper'
 import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
-import StorageIcon from '@mui/icons-material/Storage'
-import MailIcon from '@mui/icons-material/Mail'
+import DataFrameTable from '../components/KdbDataDisplay/DataFrameTable';
+import QDictionaryTable from '../components/KdbDataDisplay/QDictionaryTable';
 
-function DataFrameTable({ columns, rows, trimmed, numRows }) {
-    return (
-      <div style={{ width: "100%" }}>
-        <table
-          style={{
-            border: "2px solid #0C0C0C",
-            borderCollapse: "collapse",
-            width: "100%",
-            textAlign: "left",
-          }}
-        >
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th
-                  key={col}
-                  style={{
-                    border: "1px solid gray",
-                    padding: "8px",
-                  }}
-                >
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex} style={{ borderBottom: "1px solid lightgray" }}>
-                {columns.map((col) => (
-                  <td
-                    key={col}
-                    style={{
-                      border: "1px solid gray",
-                      padding: "8px",
-                    }}
-                  >
-                    {String(row[col])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-  
-            {/* Show dots if the data has been trimmed */}
-            {trimmed && (
-              <tr>
-                <td colSpan={columns.length} style={{ textAlign: "center", padding: "12px" }}>
-                  <span style={{ fontSize: "24px" }}>...</span>
-                </td>
-              </tr>
-            )}
-            {trimmed && (
-                <tr>
-                    <td colSpan={columns.length} style={{ textAlign: "right", padding: "12px", fontWeight: "bold" }}>
-                    Total rows: {numRows}
-                    </td>
-                </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  function QDictionaryTable({ data }) {
-    // Find the longest key for alignment
-    const longestKeyLength = data.reduce((max, item) => Math.max(max, item.key.length), 0);
-  
-    return (
-      <div style={{ fontFamily: 'monospace' }}>
-        {data.map((item, index) => {
-          // Pad the key to align with the longest key length
-          const paddedKey = item.key.padEnd(longestKeyLength, ' ');
-  
-          // Display the key-value pair with aligned "|"
-          return (
-            <div key={index}>
-              {paddedKey} | {item.value}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
+//import StorageIcon from '@mui/icons-material/Storage'
+//import MailIcon from '@mui/icons-material/Mail'
   
 const AddTestPage = () => {
     const { env, environments } = useNavigation();
@@ -130,7 +47,6 @@ const AddTestPage = () => {
     const [numberOfMessages, setNumberOfMessages] = useState('1');
     const [subTimeout, setSubTimeout] = useState('30');
     const [subParams, setSubParams] = useState([]);
-    const [ws, setWs] = useState(null)
     const navigate = useNavigate();
     const { fetchData, isAuthenticated, isLoading } = useApi()
 
@@ -156,19 +72,6 @@ const AddTestPage = () => {
             fetchTestGroups()
         }
     }, [isLoading, isAuthenticated, environments]);
-
-    // Cleanup the WebSocket on unmount
-    useEffect(() => {
-        return () => {
-        if (ws) {
-            ws.close();
-        }
-        };
-    }, [ws]);
-
-    const goToHomePage = () => {
-        navigate('/');
-    }
 
     const nameChange = (event) => {
         setName(event.target.value);
@@ -223,8 +126,6 @@ const AddTestPage = () => {
                 // Once done, we return here (or continue logic).
                 return;
             }
-                // necessary data for the url params will be in subParams. Example subParams values ["trade", "TSLA"]
-                // websocket should stay open till "numberOfMessages" are received or "subTimeout" is passed (max num of secs to allow for test)
     
             const data = await fetchPromise;
             setTestStatus(data.success);
@@ -238,7 +139,8 @@ const AddTestPage = () => {
                 columns: data.data.columns,
                 rows: data.data.rows,
                 trimmed: data.data.trimmed,
-                num_rows: data.data.num_rows
+                num_rows: data.data.num_rows,
+                use_flash: false
                 });
             } else {
                 setResponse({
@@ -246,8 +148,6 @@ const AddTestPage = () => {
                 data: data.data
                 });
             }
-            console.log("response: ",response)
-            //setResponse(data.data); // Update the data state
         } catch (error) {
             console.error('Error:', error);
             setTestStatus(false);
@@ -260,14 +160,14 @@ const AddTestPage = () => {
     };
     
     const onMessageHandler = (wsMessage) => {
-        console.log(wsMessage)
         setShowResponse(true)
         setResponse({
             type: "dataframe",
             columns: wsMessage.columns,
             rows: wsMessage.rows,
             trimmed: wsMessage.trimmed,
-            num_rows: wsMessage.num_rows
+            num_rows: wsMessage.num_rows,
+            use_flash: true
         })
     }
 
@@ -292,36 +192,53 @@ const AddTestPage = () => {
             return;
         }
     
+        // Build a config object depending on testType
+        let test_code_formatted = "";
+        if (testType === "Functional") {
+                test_code_formatted = functionalTest
+
+        } else if (testType === "Free-Form") {
+            test_code_formatted = lines.join('\n\n')
+
+        } else if (testType === "Subscription") {
+            const config = {
+                // The inputs you need for your subscription
+                subParams,
+                subscriptionTest,
+                numberOfMessages,
+                subTimeout
+            };
+            test_code_formatted = JSON.stringify(config)
+        }
+
         const testData = {
             id: crypto.randomUUID(),
             group_id: selectedGroup.id,
             test_name: name,
-            test_code: (testType === "Free-Form") ? lines.join('\n\n') : functionalTest, // Combine the lines into a single string
+            test_type: testType, // "Functional" | "Free-Form" | "Subscription"
+            test_code: test_code_formatted,
             dependencies: Object.values(linkedTests).map(test => test.test_case_id),
-            free_form: (testType === "Free-Form"),
-        };
-    
+        }
+
         try {
             const data = await fetchData(
                 `${environments[env].url}/upsert_test_case/`,
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(testData),
                 },
-                'upsert_test_case' // Endpoint identifier for error handling
-            );
-    
-            setTestStatus(true);
-            setMessage(data.message);
+                'upsert_test_case'
+            )
+
+            setTestStatus(true)
+            setMessage(data.message)
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error:', error)
             setTestStatus(false);
-            setMessage('Failed to add test case.');
+            setMessage('Failed to add test case.')
         }
-    };
+    }
 
     const handleLinkedTestChange = (event, newValue) => {
         // Avoid adding duplicates
@@ -484,7 +401,7 @@ const AddTestPage = () => {
                     onClick={handleSwitchClick}
                 />
             </div>
-            {((testType === "Free-Form")) && (
+            {(testType === "Free-Form") && (
                 <CodeTerminal lines={lines} onLinesChange={setLines} />
             )}
             {(testType === "Functional") && (
@@ -648,7 +565,7 @@ const AddTestPage = () => {
                         <QDictionaryTable data={response.data} />
                     )}
                     {response && response.type === "dataframe" && (
-                        <DataFrameTable columns={response.columns} rows={response.rows} trimmed={response.trimmed} numRows={response.num_rows} />
+                        <DataFrameTable columns={response.columns} rows={response.rows} trimmed={response.trimmed} numRows={response.num_rows} useFlash={response.use_flash} />
                     )}
                     {response && response.type === "string" && (
                         JSON.stringify(response.data, null, 2)

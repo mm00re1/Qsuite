@@ -83,7 +83,7 @@ function App() {
             <Route path="/testgroups" element={<TestGroups/>} />
             <Route path="/addtest" element={<AddTestPage/>} />
             <Route path="/testgroup/:groupId" element={<TestGroupDetail />} />
-            <Route path="/testdetail/:groupId/:testId/:date" element={<TestDetail />} />
+            <Route path="/testdetail/:groupId/:testResultId/:date" element={<TestDetail />} />
             <Route path="/settings" element={<EnvSettings />} />
             <Route path="/release/:groupId" element={<Release />} />
             <Route path="/login" element={<Login />} />

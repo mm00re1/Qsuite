@@ -22,7 +22,7 @@ const tableTheme = createTheme({
 
 const DynamicTable = ({ data = [], columnList = [], showCheckbox, onCheckboxChange, onTestNameClick, onGroupNameClick, currentDate }) => {
     //const [hoveredTestName, setHoveredTestName] = useState(null);
-    const [selectedRows, setSelectedRows] = useState([]);
+    //const [selectedRows, setSelectedRows] = useState([]);
     const textColor = 'black';
     
     const handleCheckboxChange = (id) => {
@@ -113,7 +113,7 @@ const DynamicTable = ({ data = [], columnList = [], showCheckbox, onCheckboxChan
                                                 </span>
                                             ) : column === 'Test Name' ? (
                                                 <span
-                                                    onClick={() => handleTestNameClick(row['test_case_id'], currentDate.replace(/\//g, '-'))}
+                                                    onClick={() => handleTestNameClick(row['id'], currentDate.replace(/\//g, '-'))}
                                                     //onMouseEnter={(e) => handleTestNameMouseEnter(e, row[column])}
                                                     //onMouseLeave={handleTestNameMouseLeave}
                                                     style={{
