@@ -97,6 +97,7 @@ const Release = () => {
 
                     return {
                         'test_case_id': baseItem.test_case_id,
+                        'id': 'none',
                         'free_form': baseItem.free_form,
                         'test_code': baseItem.test_code,
                         'dependencies': baseItem.dependencies,
@@ -247,8 +248,8 @@ const Release = () => {
         fetchReleaseTests(testGroupId, releaseEnv, environmentTarget)
     };
 
-    const handleTestNameClick = (test_case_id, date) => {
-        navigate(`/testdetail/${testGroupId}/${test_case_id}/${date}`);
+    const handleTestNameClick = (test_result_id, test_case_id, date) => {
+        navigate(`/testdetail/${testGroupId}/${test_case_id}/${test_result_id}/${date}`);
     };
 
     const handleSelectedTestChange = (event, newValue) => {

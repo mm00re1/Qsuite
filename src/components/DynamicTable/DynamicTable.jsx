@@ -31,9 +31,9 @@ const DynamicTable = ({ data = [], columnList = [], showCheckbox, onCheckboxChan
         }
     };
 
-    const handleTestNameClick = (test_case_id, date) => {
+    const handleTestNameClick = (test_result_id, test_case_id, date) => {
         if (onTestNameClick) {
-            onTestNameClick(test_case_id, date);
+            onTestNameClick(test_result_id, test_case_id, date);
         }
     };
 
@@ -113,7 +113,7 @@ const DynamicTable = ({ data = [], columnList = [], showCheckbox, onCheckboxChan
                                                 </span>
                                             ) : column === 'Test Name' ? (
                                                 <span
-                                                    onClick={() => handleTestNameClick(row['id'], currentDate.replace(/\//g, '-'))}
+                                                    onClick={() => handleTestNameClick(row['id'], row['test_case_id'], currentDate.replace(/\//g, '-'))}
                                                     //onMouseEnter={(e) => handleTestNameMouseEnter(e, row[column])}
                                                     //onMouseLeave={handleTestNameMouseLeave}
                                                     style={{

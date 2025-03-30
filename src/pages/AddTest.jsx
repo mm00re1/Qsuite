@@ -249,13 +249,13 @@ const AddTestPage = () => {
     };
 
     const handleFunctionalTestChange = async (event, newValue) => {
-        setFunctionalTest(newValue);
-        if (name === '') {
-            setName(newValue);
-        }
+        setFunctionalTest(newValue)
+        setName(newValue)
+
         if (newValue === '' || newValue == null) {
             setTestCode([''])
             setFunctionalTest(null)
+            setName('')
             return
         }
         const groupId = (testGroups.find(testGroup => testGroup.name === group)).id;
@@ -277,11 +277,11 @@ const AddTestPage = () => {
     };
 
     const handleSubTestChange = async (event, newValue) => {
-        if (name === '') {
-            setName(newValue);
-        }
-        if (newValue === '') {
+        setName(newValue)
+
+        if (newValue === '' || newValue == null) {
             setSubscriptionTest(null)
+            setName('')
         } else {
             setSubscriptionTest(newValue)
         }

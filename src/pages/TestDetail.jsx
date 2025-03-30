@@ -28,9 +28,8 @@ import './AddTest.css'
 import { useApi } from '../api/ApiContext'
 
   const TestDetail = () => {
-    const { groupId, testResultId, date } = useParams();
+    const { groupId, testCaseId, testResultId, date } = useParams();
     const { env, environments, testHistory, addTestToHistory, removeLastTestFromHistory } = useNavigation();
-
     const [name, setName] = React.useState('');
     const [group, setGroup] = useState('');
     const [lines, setLines] = useState(['']); // Start with one empty line
@@ -57,9 +56,14 @@ import { useApi } from '../api/ApiContext'
     const { fetchData, isAuthenticated, isLoading } = useApi()
 
 
-    const fetchTestData = async (date, testResId, testGroupsData) => {
+    const fetchTestData = async (date, testCaseId, testResultId, testGroupsData) => {
         const formattedDate = date.replace(/\//g, '-');
-        const testData = await fetchData(`${environments[env].url}/get_test_info/?date=${formattedDate}&test_result_id=${testResId}`, {}, 'get_test_info')
+        let url = `${environments[env].url}/get_test_info/?date=${formattedDate}&test_id=${testCaseId}`;
+
+        if (testResultId && (testResultId !== 'none') && (testResultId !== "null")) {
+            url += `&test_result_id=${testResultId}`;
+        }
+        const testData = await fetchData(url, {}, 'get_test_info');
         setTestData(testData);
         setGroup(testData.group_name);
         setName(testData.test_name);
@@ -72,31 +76,29 @@ import { useApi } from '../api/ApiContext'
         } else if (testData.test_type === "Functional") {
             setFunctionalTest((testData.test_type === "Functional") ? testData.test_code : '');
             const groupId = (testGroupsData.find(testGroup => testGroup.name === testData.group_name)).id;
-            const testCodeData = await fetchData(`${environments[env].url}/view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code')
+            const testCodeData = await fetchData(`${environments[env].url}/view_test_code/?group_id=${groupId}&test_name=${testData.test_code}`, {}, 'view_test_code');
             if (testCodeData.success) {
-                setTestCode(testCodeData.results.split('\n'))
+                setTestCode(testCodeData.results.split('\n'));
             } else {
-                setTestStatus(false)
-                setMessage(testCodeData.message)
+                setTestStatus(false);
+                setMessage(testCodeData.message);
             }
         } else if (testData.test_type === "Subscription") {
-            let parsedData = JSON.parse(testData.test_code)
-            console.log("parsedData: ",parsedData)
-            setSubParams(parsedData.subParams)
-            setSubscriptionTest(parsedData.subscriptionTest)
-            setNumberOfMessages(parsedData.numberOfMessages)
-            setSubTimeout(parsedData.subTimeout)
+            let parsedData = JSON.parse(testData.test_code);
+            console.log("parsedData: ", parsedData);
+            setSubParams(parsedData.subParams);
+            setSubscriptionTest(parsedData.subscriptionTest);
+            setNumberOfMessages(parsedData.numberOfMessages);
+            setSubTimeout(parsedData.subTimeout);
         }
     };
 
-    const fetchTestGroupsAndData = async (date, testResId) => {
+    const fetchTestGroupsAndData = async (date, testCaseId, testResultId) => {
         try {
             const testGroupsData = await fetchData(`${environments[env].url}/test_groups/`, {}, 'test_groups');
             setTestGroups(testGroupsData);
-            console.log("date: ", date)
-            console.log("testResId: ",testResId)
-            if (date && testResId) {
-                await fetchTestData(date, testResId, testGroupsData);
+            if (date && testCaseId) {
+                await fetchTestData(date, testCaseId, testResultId, testGroupsData);
             }
         } catch (error) {
             console.error('Error fetching test data:', error);
@@ -110,20 +112,21 @@ import { useApi } from '../api/ApiContext'
         const baseEnv = orderedEnvs[0] === env;
         setIsBaseEnv(baseEnv);
         if (!isLoading && isAuthenticated) {
-            fetchTestGroupsAndData(date, testResultId);
-            addTestToHistory(testResultId);
+            fetchTestGroupsAndData(date, testCaseId, testResultId);
+            addTestToHistory(testResultId === 'none' ? testCaseId : testResultId); // Use testCaseId if no result
         }
-    }, [testResultId, date, env, isLoading]);
+    }, [testCaseId, testResultId, date, env, isLoading]);
 
     const handleTestNameClick = (test_result_id, dt) => {
-        addTestToHistory(testResultId);
-        navigate(`/testdetail/${groupId}/${test_result_id}/${dt}`)
+        addTestToHistory(test_result_id);
+        navigate(`/testdetail/${groupId}/${testCaseId}/${test_result_id}/${dt}`);
     };
 
     const goToPrevTestPage = () => {
         removeLastTestFromHistory();
         if (testHistory.length > 1) {
-            navigate(`/testdetail/${groupId}/${testHistory[testHistory.length - 2]}/${date.replace(/\//g, '-')}`);
+            const prevTestId = testHistory[testHistory.length - 2];
+            navigate(`/testdetail/${groupId}/${testCaseId}/${prevTestId}/${date.replace(/\//g, '-')}`);
         }
     };
 

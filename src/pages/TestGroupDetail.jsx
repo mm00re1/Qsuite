@@ -234,8 +234,8 @@ const TestGroupDetail = () => {
         }
     };
 
-    const handleTestNameClick = (test_result_id, date) => {
-        navigate(`/testdetail/${testGroupId}/${test_result_id}/${date}`);
+    const handleTestNameClick = (test_result_id, test_case_id, date) => {
+        navigate(`/testdetail/${testGroupId}/${test_case_id}/${test_result_id}/${date}`);
     };
 
     const handleSelectedTestChange = (event, newValue) => {
