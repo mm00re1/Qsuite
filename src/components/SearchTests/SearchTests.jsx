@@ -22,13 +22,13 @@ const SearchTests = ({ linkedTests, handleLinkedTestChange, removeLinkedTest, re
         try {
             const data = groupIdRef.current
             ? await fetchWithErrorHandling(
-                `${environments[env].url}search_tests/?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`,
+                `${environments[env].url}/search_tests/?group_id=${groupIdRef.current}&query=${inputValue}&limit=10`,
                 {},
                 'search_tests',
                 showError
               )
             : await fetchWithErrorHandling(
-                `${environments[env].url}search_tests/?query=${inputValue}&limit=10`,
+                `${environments[env].url}/search_tests/?query=${inputValue}&limit=10`,
                 {},
                 'search_tests',
                 showError

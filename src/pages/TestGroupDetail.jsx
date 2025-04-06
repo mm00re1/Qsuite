@@ -14,16 +14,20 @@ import IconButton from '@mui/material/IconButton';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import { PieChart } from '@mui/x-charts/PieChart';
-import { useNavigation } from '../TestNavigationContext'; // Adjust the path as necessary
+import { useNavigation } from '../TestNavigationContext';
 import TestGroupDetailChart from '../components/Charts/TestGroupDetailChart';
 import './TestGroupDetail.css';
 import SearchTests from '../components/SearchTests/SearchTests';
 import BackButton from '../components/BackButton/BackButton';
-import { useParams } from 'react-router-dom'
-import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup'
-import NotificationPopup from '../components/NotificationPopup/NotificationPopup'
-import CircularProgress from '@mui/material/CircularProgress'
-import { useApi } from '../api/ApiContext'
+import { useParams } from 'react-router-dom';
+import ConfirmationPopup from '../components/ConfirmationPopup/ConfirmationPopup';
+import NotificationPopup from '../components/NotificationPopup/NotificationPopup';
+import CircularProgress from '@mui/material/CircularProgress';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { useApi } from '../api/ApiContext';
+import LinearProgress from '@mui/material/LinearProgress';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 const TestGroupDetail = () => {
     const { globalDt, setGlobalDt, env, environments, deleteTestHistory } = useNavigation();
@@ -50,8 +54,17 @@ const TestGroupDetail = () => {
     const [notification, setNotification] = useState(null)
     const [notificationSuccess, setNotificationSuccess] = useState(true)
     const [isFinalEnv, setIsFinalEnv] = useState(false)
-    const sortOptions = ["Failed", "Passed", "Time Taken"]
-    const { fetchData, isAuthenticated, isLoading } = useApi()
+    const [runNumber, setRunNumber] = useState(null)
+    const [runNumbers, setRunNumbers] = useState([])
+    const [testProgress, setTestProgress] = useState(0);
+    const [isRunning, setIsRunning] = useState(false);
+    const sortOptions = ["Failed", "Passed", "Time Taken"];
+    const { fetchData, isAuthenticated, isLoading } = useApi();
+
+    // Polling states
+    const [totalTests, setTotalTests] = useState(0);
+    const [completedTests, setCompletedTests] = useState(0);
+    const [lastUpdateTime, setLastUpdateTime] = useState(null);
 
     useEffect(() => {
         deleteTestHistory()
@@ -59,9 +72,7 @@ const TestGroupDetail = () => {
 
     useEffect(() => {
         async function fetchTestGroups() {
-            if (!environments[env] || !environments[env].url) {
-                return;
-            }
+            if (!environments[env] || !environments[env].url) return;
             try {
                 const data = await fetchData(`${environments[env].url}/test_groups/`, {}, 'test_groups')
                 setTestGroups(data)
@@ -76,30 +87,41 @@ const TestGroupDetail = () => {
     }, [env, isLoading, isAuthenticated, environments])
 
     useEffect(() => {
-        async function fetchUniqueDates() {
-            if (!environments[env] || !environments[env].url) {
-                // If there's no environment set yet, just return.
-                return;
-            }
+        async function fetchUniqueDatesAndRunNumbers() {
+            if (!environments[env] || !environments[env].url) return
             try {
-                const data = await fetchData(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates');
-                setStartDate(dayjs(data.start_date));
-                setLatestDate(dayjs(data.latest_date));
-                const missingDatesSet = new Set(data.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')));
+                // Fetch unique dates
+                const datesData = await fetchData(`${environments[env].url}/get_unique_dates/`, {}, 'get_unique_dates')
+                setStartDate(dayjs(datesData.start_date))
+                setLatestDate(dayjs(datesData.latest_date))
+                const missingDatesSet = new Set(datesData.missing_dates.map(date => dayjs(date, 'YYYY-MM-DD').format('YYYY-MM-DD')))
                 setMissingDates(missingDatesSet);
-                if (!globalDt && data.latest_date) {
-                    setGlobalDt(dayjs(data.latest_date).format('DD/MM/YYYY')); // Set to the latest date if no date is passed
-                } else if (!globalDt && !data.latest_date) {
+                if (!globalDt && datesData.latest_date) {
+                    setGlobalDt(dayjs(datesData.latest_date).format('DD/MM/YYYY'))
+                } else if (!globalDt && !datesData.latest_date) {
                     setGlobalDt(dayjs().format('DD/MM/YYYY'));
                 }
+
+                // Fetch run numbers for the selected date
+                const formattedDate = (globalDt || dayjs().format('DD/MM/YYYY')).replace(/\//g, '-');
+                const runNumbersData = await fetchData(
+                    `${environments[env].url}/get_run_numbers_by_day/?date=${formattedDate}&group_id=${testGroupId}`,
+                    {},
+                    'get_run_numbers_by_day'
+                );
+                setRunNumbers(runNumbersData.run_numbers);
+                // Set runNumber to the minimum available, or 1 if no runs exist
+                const minRunNumber = runNumbersData.run_numbers.length > 0 ? Math.min(...runNumbersData.run_numbers) : 1;
+                setRunNumber(minRunNumber);
             } catch (error) {
-                console.error('Error fetching dates:', error);
+                console.error('Error fetching dates or run numbers:', error);
+                setRunNumber(1); // Fallback to 1 on error
             }
         }
         if (!isLoading && isAuthenticated) {
-            fetchUniqueDates()
+            fetchUniqueDatesAndRunNumbers();
         }
-    }, [globalDt, env, isLoading, isAuthenticated, environments]);
+    }, [globalDt, env, isLoading, isAuthenticated, environments, testGroupId]);
 
     useEffect(() => {
         const envOrder = ['DEV', 'TEST', 'PROD']
@@ -109,25 +131,25 @@ const TestGroupDetail = () => {
         finalEnv = orderedEnvs.length > 1 && finalEnv
         setIsFinalEnv(finalEnv)
 
-        if (globalDt && !isLoading && isAuthenticated) {
+        if (globalDt && !isLoading && isAuthenticated && runNumber !== null) {
             fetchGroupStats(globalDt, testGroupId)
             fetchExecutionTimes(globalDt, testGroupId)
             fetchTestRunResults(globalDt, testGroupId, sortOption, currentPage, true, finalEnv)
         }
-    }, [testGroups,env,isLoading,isAuthenticated]);
+    }, [testGroups, env, isLoading, isAuthenticated, globalDt, runNumber]);
 
     const fetchGroupStats = async (selectedDate, group_id) => {
         const formattedDate = selectedDate.replace(/\//g, '-');
         try {
             const data = await fetchData(
-                `${environments[env].url}/get_test_group_stats/?date=${formattedDate}&group_id=${group_id}`,
+                `${environments[env].url}/get_test_group_stats/?date=${formattedDate}&group_id=${group_id}&run_number=${runNumber}`,
                 {},
                 'get_test_group_stats'
             )
             setTotalPassed(data.total_passed)
             setTotalFailed(data.total_failed)
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error fetching group stats:', error);
         }
     }
 
@@ -136,7 +158,7 @@ const TestGroupDetail = () => {
         setChartLoading(true)
         try {
             const data = await fetchData(
-                `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=1&sortOption=${"Time Taken"}`,
+                `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&run_number=${runNumber}&page_number=1&sortOption=${"Time Taken"}`,
                 {},
                 'get_test_results_by_day'
             )
@@ -154,7 +176,7 @@ const TestGroupDetail = () => {
         if (selectedDate) {
             try {
                 const data = await fetchData(
-                    `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&page_number=${pageNumber}&sortOption=${sortStyle}`,
+                    `${environments[env].url}/get_test_results_by_day/?date=${formattedDate}&group_id=${group_id}&run_number=${runNumber}&page_number=${pageNumber}&sortOption=${sortStyle}`,
                     {},
                     'get_test_results_by_day'
                 )
@@ -175,7 +197,7 @@ const TestGroupDetail = () => {
         const formattedDate = selectedDate.replace(/\//g, '-'); 
         try {
             const data = await fetchData(
-                `${environments[env].url}/get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&test_ids=${testIds.join(',')}`,
+                `${environments[env].url}/get_tests_by_ids/?date=${formattedDate}&group_id=${group_id}&run_number=${runNumber}&test_ids=${testIds.join(',')}`,
                 {},
                 'get_tests_by_ids'
             )
@@ -184,6 +206,89 @@ const TestGroupDetail = () => {
             setTotalPages(1)
         } catch (error) {
             console.error('Error fetching data:', error);
+        }
+    };
+
+    const pollTestProgress = async (newDate, newRunNumber, totalTests) => {
+        try {
+            const data = await fetchData(
+                `${environments[env].url}/get_test_progress/${testGroupId}?date=${newDate}&run_number=${newRunNumber}`,
+                {},
+                'get_test_progress'
+            );
+            const newCompletedTests = data.completed_tests;
+            setCompletedTests(newCompletedTests);
+
+            // Calculate progress
+            const progress = totalTests > 0 ? (newCompletedTests / totalTests) * 100 : 0;
+            setTestProgress(progress);
+
+            // Check for timeout (3 minutes per test)
+            const now = Date.now();
+            if (lastUpdateTime && newCompletedTests === completedTests) {
+                const timeSinceLastUpdate = (now - lastUpdateTime) / 1000; // in seconds
+                const timeoutSeconds = 3 * 60; // 3 minutes per test
+                if (timeSinceLastUpdate >= timeoutSeconds) {
+                    setIsRunning(false);
+                    setNotification("Test run timed out after 3 minutes per test.");
+                    setNotificationSuccess(false);
+                    return false;
+                }
+            }
+
+            if (newCompletedTests !== completedTests) {
+                setLastUpdateTime(now);
+            }
+
+            // Check if test run is complete
+            if (newCompletedTests >= totalTests) {
+                setIsRunning(false);
+                // Refresh the page with new date and run number
+                setGlobalDt(dayjs(newDate, 'DD-MM-YYYY').format('DD/MM/YYYY'));
+                setRunNumber(newRunNumber);
+                const updatedRunNumbers = [...runNumbers, newRunNumber];
+                setRunNumbers(updatedRunNumbers);
+                return false; // Stop polling
+            }
+
+            return true; // Continue polling
+        } catch (error) {
+            console.error('Error polling test progress:', error);
+            setIsRunning(false);
+            setNotification("Error polling test progress.");
+            setNotificationSuccess(false);
+            return false;
+        }
+    };
+
+    const handlePlayClick = async () => {
+        try {
+            setIsRunning(true);
+            setTestProgress(0);
+            setCompletedTests(0);
+            setLastUpdateTime(Date.now());
+
+            const response = await fetchData(
+                `${environments[env].url}/execute_test_group/${testGroupId}`,
+                { method: 'POST' },
+                'execute_test_group'
+            );
+
+            // Set the date, run number, and total tests from the response
+            setTotalTests(response.total_tests);
+
+            // Start polling
+            const pollInterval = setInterval(async () => {
+                const shouldContinue = await pollTestProgress(response.date, response.run_number, response.total_tests);
+                if (!shouldContinue) {
+                    clearInterval(pollInterval);
+                }
+            }, 500); // Poll every 5 seconds
+        } catch (error) {
+            console.error('Error starting test group execution:', error);
+            setIsRunning(false);
+            setNotification("Failed to start test group execution.");
+            setNotificationSuccess(false);
         }
     };
 
@@ -204,6 +309,11 @@ const TestGroupDetail = () => {
         setCurrentPage(1);
         fetchTestRunResults(globalDt, testGroupId, event.target.value, 1, isFinalEnv);
     };
+
+    const runNumberChange = (event) => {
+        setRunNumber(event.target.value)
+        setCurrentPage(1)
+    }
 
     const onDateChange = (newDate) => {
         const formattedDate = newDate ? newDate.format('DD/MM/YYYY') : '';
@@ -471,13 +581,64 @@ const TestGroupDetail = () => {
                     message={"Search for test"}
                     group_id={testGroupId}
                 />
+                <FormControl variant="filled">
+                <InputLabel shrink={runNumber !== null} style={{ fontFamily: 'Cascadia Code' }}> Run Number </InputLabel>
+                    <Select
+                    value={runNumber}
+                    label="Run Number"
+                    onChange={runNumberChange}
+                    style={{
+                        backgroundColor: 'white',
+                        borderRadius: 0,
+                        fontFamily: 'Cascadia Code',
+                        boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.1)',
+                        minWidth: '250px'
+                    }}
+                    MenuProps={{
+                        PaperProps: {
+                          style: {
+                            backgroundColor: 'white', // Dropdown box color
+                          }
+                        }
+                      }}
+                    >
+                    {runNumbers.map((option, index) => (
+                        <MenuItem
+                            key={index}
+                            value={option} // Use option.name for the value
+                            style={{fontFamily: 'Cascadia Code', display: 'flex', justifyContent: 'center'}}
+                        >
+                            {option}
+                        </MenuItem>
+                    ))}
+                    </Select>
+                </FormControl>
+                {/* Green Play Icon */}
+                <Tooltip title="Run Test Group" arrow>
+                    <PlayArrowIcon
+                        onClick={handlePlayClick}
+                        style={{
+                            marginTop: '16px',
+                            marginLeft: '20px',
+                            color: '#4CAF50', // Green color
+                            fontSize: '26px',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s', // Smooth indent effect
+                        }}
+                        sx={{
+                            '&:active': {
+                                transform: 'translateY(2px)', // Indent effect when clicked
+                            },
+                        }}
+                    />
+                </Tooltip>
                 {!isFinalEnv && (
                     <Tooltip title="Delete Selected" arrow>
                         <DeleteIcon 
                         onClick={tableData.some(test => test.Selected) ? handleDeleteClick : undefined}
                         style={{ 
                             marginTop: '16px',
-                            marginLeft: '40px',
+                            marginLeft: '25px',
                             cursor: tableData.some(test => test.Selected) ? 'pointer' : '',
                             fontSize: '26px',
                             opacity: tableData.some(test => test.Selected) ? 1 : 0.5,
@@ -486,6 +647,54 @@ const TestGroupDetail = () => {
                     </Tooltip>
                 )}
             </div>
+            {isRunning && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginTop: '20px',
+                    marginBottom: '30px',
+                    marginLeft: '5%',
+                    marginRight: '5%'
+                    }}
+                >
+                <Typography
+                    variant="body1"
+                    style={{
+                        fontFamily: 'Cascadia Code',
+                        marginRight: '20px',
+                        minWidth: '150px', // Ensures consistent spacing
+                        paddingBottom: '25px'
+                    }}
+                >
+                    Test Suite Progress
+                </Typography>
+                <Box sx={{ flexGrow: 1 }}>
+                    <LinearProgress
+                        variant="determinate"
+                        value={testProgress}
+                        sx={{
+                            height: 10,
+                            borderRadius: 5,
+                            backgroundColor: '#e0e0e0', // Background of the progress bar (gray)
+                            '& .MuiLinearProgress-bar': {
+                                backgroundColor: '#60F82A', // Green color for the progress
+                            },
+                        }}
+                    />
+                    <Typography
+                        variant="caption"
+                        style={{
+                            fontFamily: 'Cascadia Code',
+                            marginTop: '5px',
+                            display: 'block',
+                            textAlign: 'center',
+                        }}
+                    >
+                        {`${Math.round(testProgress)}%`}
+                    </Typography>
+                </Box>
+            </div>
+            )}
             {(selectedTests.length > 0) && (
                 <div style={{ marginLeft: '5%', marginBottom: '20px', marginTop: '1px' }}>
                     <BackButton title={"All Tests"} onClick={backToAllTests} textColor={'#3E0A66'} fontSize={'16px'} />

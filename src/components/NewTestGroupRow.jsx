@@ -92,6 +92,7 @@ const NewTestGroupRow = ({ environments, group_data, handleTestConnect, updateGr
                             <GroupForm
                                 key={env}
                                 env={env}
+                                connMethod={environments[env].conn_method}
                                 machine={groupData[env].Machine}
                                 port={groupData[env].Port}
                                 schedule={groupData[env].Scheduled}

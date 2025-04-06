@@ -102,7 +102,7 @@ const EnvSettings = () => {
       const envData = environments[environmentToDelete]
       if (envData?.isSaved) {
         const newEnvironments = { ...environments };
-        delete newEnvironments[envName];
+        delete newEnvironments[environmentToDelete];
         saveEnvironmentsToLocalStorage(newEnvironments);
 
         // Refresh environments after deletion
